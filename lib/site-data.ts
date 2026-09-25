@@ -68,6 +68,11 @@ export const lectures: Lecture[] = [
   { id: 'l3', title: 'الدائرة – الدرس الثالث', youtubeUrl: 'https://youtu.be/mQeNDd0VARo' },
   { id: 'l4', title: 'الدائرة – الدرس الرابع', youtubeUrl: 'https://youtu.be/TAODuKgaVHk' },
   { id: 'l5', title: 'الدائرة – الدرس الخامس', youtubeUrl: 'https://youtu.be/C5xW5aZrvTU' },
+    { id: 'l6', title: 'القطع المكافئ – الدرس الأول', youtubeUrl: 'https://youtu.be/MZsaCxebCDk' },
+  { id: 'l7', title: 'القطع المكافئ – الدرس الثاني', youtubeUrl: 'https://youtu.be/6GBFDfNyPs4' },
+  { id: 'l8', title: 'القطع المكافئ – الدرس الثالث', youtubeUrl: 'https://youtu.be/tVVCEs_tJtE' },
+  { id: 'l9', title: 'القطع المكافئ – الدرس الرابع', youtubeUrl: 'https://youtu.be/I5uS90wiZqo' },
+  { id: 'l10', title: 'القطع المكافئ – الدرس الخامس', youtubeUrl: 'https://youtu.be/fAR_5buAQqI' },
 ]
 
 // ——— الأسئلة الوزارية: مصنّفة حسب الموضوع ———

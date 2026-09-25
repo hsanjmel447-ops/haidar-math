@@ -78,6 +78,17 @@ export const lectures: Lecture[] = [
   { id: 'l13', title: 'القطع الناقص – الدرس الثالث', youtubeUrl: 'https://youtu.be/mWSqOweVQUc' },
   { id: 'l14', title: 'القطع الناقص – الدرس الرابع', youtubeUrl: 'https://youtu.be/r731PevGb4g' },
     { id: 'l15', title: 'القطع الزائد – الدرس الأول', youtubeUrl: 'https://youtu.be/3Bb26SvoEg0' },
+      { id: 'l16', title: 'المشتقة – الدرس الأول', youtubeUrl: 'https://www.youtube.com/live/b8EaGVeY2sM' },
+  { id: 'l17', title: 'المشتقة – الدرس الثاني', youtubeUrl: 'https://www.youtube.com/live/EGlL0MTZ9Nw' },
+  { id: 'l18', title: 'المشتقة – الدرس الثالث', youtubeUrl: 'https://www.youtube.com/live/nmMPQlu-mD8' },
+  { id: 'l19', title: 'المشتقة – الدرس الرابع', youtubeUrl: 'https://www.youtube.com/live/mcmL8ZcBbAk' },
+  { id: 'l20', title: 'المشتقة – الدرس الخامس', youtubeUrl: 'https://www.youtube.com/live/VqBcEUQRo3E' },
+  { id: 'l21', title: 'المشتقة – الدرس السادس', youtubeUrl: 'https://www.youtube.com/live/Rp_rjV0QbdM' },
+  { id: 'l22', title: 'المشتقة – الدرس السابع', youtubeUrl: 'https://www.youtube.com/live/S6Z_hpRDEQQ' },
+  { id: 'l23', title: 'المشتقة – الدرس الثامن', youtubeUrl: 'https://www.youtube.com/live/eS_AMM4QSEw' },
+  { id: 'l24', title: 'المشتقة – الدرس التاسع', youtubeUrl: 'https://www.youtube.com/live/7T6liKHCbFE' },
+  { id: 'l25', title: 'المشتقة – الدرس العاشر', youtubeUrl: 'https://www.youtube.com/live/rQIqmacX4XE' },
+  { id: 'l26', title: 'المشتقة – الدرس الحادي عشر', youtubeUrl: 'https://www.youtube.com/live/gBoQIe7iNm8' },
 ]
 
 // ——— الأسئلة الوزارية: مصنّفة حسب الموضوع ———

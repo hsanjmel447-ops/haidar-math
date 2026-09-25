@@ -62,11 +62,12 @@ export type Lecture = {
   // أضف رابط اليوتيوب الحقيقي هنا لاحقاً (اتركه '' حالياً)
   youtubeUrl: string
 }
-
 export const lectures: Lecture[] = [
-  { id: 'l1', title: 'محاضرة مجانية', youtubeUrl: '' },
-  { id: 'l2', title: 'محاضرة مجانية', youtubeUrl: '' },
-  { id: 'l3', title: 'محاضرة مجانية', youtubeUrl: '' },
+  { id: 'l1', title: 'الدائرة – الدرس الأول', youtubeUrl: 'https://youtu.be/6Qx1HLkDcds' },
+  { id: 'l2', title: 'الدائرة – الدرس الثاني', youtubeUrl: 'https://youtu.be/Jr_yg6Q8fcY' },
+  { id: 'l3', title: 'الدائرة – الدرس الثالث', youtubeUrl: 'https://youtu.be/mQeNDd0VARo' },
+  { id: 'l4', title: 'الدائرة – الدرس الرابع', youtubeUrl: 'https://youtu.be/TAODuKgaVHk' },
+  { id: 'l5', title: 'الدائرة – الدرس الخامس', youtubeUrl: 'https://youtu.be/C5xW5aZrvTU' },
 ]
 
 // ——— الأسئلة الوزارية: مصنّفة حسب الموضوع ———

@@ -77,6 +77,7 @@ export const lectures: Lecture[] = [
   { id: 'l12', title: 'القطع الناقص – الدرس الثاني', youtubeUrl: 'https://youtu.be/AqAe9FZO31o' },
   { id: 'l13', title: 'القطع الناقص – الدرس الثالث', youtubeUrl: 'https://youtu.be/mWSqOweVQUc' },
   { id: 'l14', title: 'القطع الناقص – الدرس الرابع', youtubeUrl: 'https://youtu.be/r731PevGb4g' },
+    { id: 'l15', title: 'القطع الزائد – الدرس الأول', youtubeUrl: 'https://youtu.be/3Bb26SvoEg0' },
 ]
 
 // ——— الأسئلة الوزارية: مصنّفة حسب الموضوع ———

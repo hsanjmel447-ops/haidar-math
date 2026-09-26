@@ -2,7 +2,8 @@ import { SiteHeader } from '@/components/site-header'
 import { Hero } from '@/components/hero'
 import { Courses } from '@/components/courses'
 import { LatestLectures } from '@/components/latest-lectures'
-import { MinistryQuestions } from '@/components/ministry-questions'
+import { MinistryQuestions } from '@/
+import { Quizzes } from '@/components/quizzes'
 import { Materials } from '@/components/materials'
 import { StudentResults } from '@/components/student-results'
 import { About } from '@/components/about'
@@ -18,6 +19,7 @@ export default function Page() {
         <Courses />
         <LatestLectures />
         <MinistryQuestions />
+        <Quizzes />
         <Materials />
         <StudentResults />
         <About />

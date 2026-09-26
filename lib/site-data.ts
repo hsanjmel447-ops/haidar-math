@@ -16,6 +16,7 @@ export const navItems: NavItem[] = [
   { label: 'الدورات', href: '#courses' },
   { label: 'المحاضرات المجانية', href: '#lectures' },
   { label: 'الأسئلة الوزارية', href: '#ministry' },
+  { label: 'طلاب الخاص 🔒', href: '/private-students' },
   { label: 'الملازم والملخصات', href: '#materials' },
   { label: 'نتائج الطلاب', href: '#results' },
   { label: 'عن الأستاذ', href: '#about' },

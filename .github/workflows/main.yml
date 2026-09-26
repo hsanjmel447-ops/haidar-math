@@ -1,4 +1,4 @@
-name:name: تحديث ملف قفل pnpm
+name: تحديث ملف قفل pnpm
 
 on:
   workflow_dispatch:

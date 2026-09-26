@@ -89,6 +89,14 @@ export const lectures: Lecture[] = [
   { id: 'l24', title: 'المشتقة – الدرس التاسع', youtubeUrl: 'https://www.youtube.com/live/7T6liKHCbFE' },
   { id: 'l25', title: 'المشتقة – الدرس العاشر', youtubeUrl: 'https://www.youtube.com/live/rQIqmacX4XE' },
   { id: 'l26', title: 'المشتقة – الدرس الحادي عشر', youtubeUrl: 'https://www.youtube.com/live/gBoQIe7iNm8' },
+    { id: 'l27', title: 'التكامل – الدرس الأول', youtubeUrl: 'https://www.youtube.com/live/UaFG6t_I0go' },
+  { id: 'l28', title: 'التكامل – الدرس الثاني', youtubeUrl: 'https://www.youtube.com/live/TdsnvrJwR8g' },
+  { id: 'l29', title: 'التكامل – الدرس الثالث', youtubeUrl: 'https://www.youtube.com/live/ztcQS65UPSA' },
+  { id: 'l30', title: 'التكامل – الدرس الرابع', youtubeUrl: 'https://www.youtube.com/live/L3_YgKF1UTo' },
+  { id: 'l31', title: 'التكامل – الدرس الخامس', youtubeUrl: 'https://www.youtube.com/live/pIQAzbIhTpA' },
+  { id: 'l32', title: 'التكامل – الدرس السادس', youtubeUrl: 'https://www.youtube.com/live/uRSe_PGyEoE' },
+  { id: 'l33', title: 'التكامل – الدرس السابع', youtubeUrl: 'https://www.youtube.com/live/wfjAqC7Mrg4' },
+  { id: 'l34', title: 'التكامل – الدرس الثامن', youtubeUrl: 'https://www.youtube.com/live/CewOk9O4wyI' },
 ]
 
 // ——— الأسئلة الوزارية: مصنّفة حسب الموضوع ———

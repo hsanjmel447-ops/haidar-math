@@ -1,4 +1,4 @@
-name: Update pnpm lockfile
+name:name: تحديث ملف قفل pnpm
 
 on:
   workflow_dispatch:
@@ -11,24 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: استخراج المستودع
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: إعداد pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 12.3.4
 
-      - name: Setup Node.js
+      - name: إعداد Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
-      - name: Update lockfile
-        run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: تحديث ملف القفل
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Commit updated lockfile
+      - name: حفظ ملف القفل
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

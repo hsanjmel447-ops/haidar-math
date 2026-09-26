@@ -2,7 +2,7 @@ import { SiteHeader } from '@/components/site-header'
 import { Hero } from '@/components/hero'
 import { Courses } from '@/components/courses'
 import { LatestLectures } from '@/components/latest-lectures'
-import { MinistryQuestions } from '@/
+import { MinistryQuestions } from '@/components/ministry-questions''c
 import { Quizzes } from '@/components/quizzes'
 import { Materials } from '@/components/materials'
 import { StudentResults } from '@/components/student-results'

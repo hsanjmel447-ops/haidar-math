@@ -18,6 +18,7 @@ const tajawal = Tajawal({
 })
 
 export const metadata: Metadata = {
+manifest: '/manifest.webmanifest',
   title: 'حيدر محمد رياضيات | الأستاذ حيدر محمد',
   description:
     'منصة تعليمية لتدريس الرياضيات لطلاب السادس المهني في العراق مع الأستاذ حيدر محمد — دورات، محاضرات مجانية، أسئلة وزارية، ونتائج الطلاب.',
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icon-512.png',
   },
 }
 

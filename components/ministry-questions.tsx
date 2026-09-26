@@ -12,9 +12,10 @@ export function MinistryQuestions() {
       />
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ministryTopics.map((topic) => (
-          <article
+        {ministryTopics.slice(0, 4).map((topic) => (
+          <a
             key={topic.id}
+            href={`/ministry-questions/${topic.id}.png`}
             className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40"
           >
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
@@ -24,7 +25,7 @@ export function MinistryQuestions() {
               {topic.title}
             </span>
             <ArrowLeft className="size-4 text-muted-foreground transition-all group-hover:-translate-x-1 group-hover:text-brand" />
-          </article>
+          </a>
         ))}
       </div>
     </section>

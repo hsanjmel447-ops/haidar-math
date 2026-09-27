@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
+import PrivateQuizzes from '@/components/private-quizzes'
 type Student = {
   id: number
   name: string
@@ -39,6 +39,7 @@ export default function PrivateStudentsPage() {
 
   const [showLectures, setShowLectures] = useState(false)
   const [lectures, setLectures] = useState<Lecture[]>([])
+  const [showQuizzes, setShowQuizzes] = useState(false)
   const [lecturesLoading, setLecturesLoading] = useState(false)
   const [lecturesError, setLecturesError] = useState('')
 
@@ -247,7 +248,12 @@ export default function PrivateStudentsPage() {
             </div>
           </div>
 
-          {!showLectures ? (
+          {showQuizzes ? (
+  <PrivateQuizzes
+    deviceId={getDeviceId()}
+    onBack={() => setShowQuizzes(false)}
+  />
+) : !showLectures ? (
             <section className="mt-6">
               <h2 className="text-2xl font-bold">
                 محتوى طلاب الخاص
@@ -300,6 +306,7 @@ export default function PrivateStudentsPage() {
 
                   <button
                     type="button"
+                    onClick={() => setShowQuizzes(true)}
                     className="mt-5 w-full rounded-xl border border-zinc-700 px-4 py-3 font-bold"
                   >
                     عرض الاختبارات

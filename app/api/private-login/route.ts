@@ -6,6 +6,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const code = String(body.code ?? '').trim()
 
+    console.log('LOGIN CODE RECEIVED:', JSON.stringify(code))
+
     if (!code) {
       return NextResponse.json(
         { success: false, message: 'أدخل كود الاشتراك' },
@@ -17,9 +19,10 @@ export async function POST(request: Request) {
       .from('private_students')
       .select('id, name, access_code, is_active, expires_at')
 
-    if (error) {
-      console.error('SUPABASE ERROR:', error)
+    console.log('SUPABASE DATA:', JSON.stringify(data))
+    console.log('SUPABASE ERROR:', JSON.stringify(error))
 
+    if (error) {
       return NextResponse.json(
         {
           success: false,

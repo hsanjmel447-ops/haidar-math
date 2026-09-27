@@ -71,7 +71,6 @@ export async function GET(request: Request) {
     )
   }
 
-  // التحقق من الجهاز
   const deviceId = request.headers.get('x-device-id')
 
   if (!deviceId) {
@@ -81,7 +80,6 @@ export async function GET(request: Request) {
     )
   }
 
-  // التحقق من الطالب والاشتراك والجهاز
   const { data: student, error: studentError } =
     await supabaseAdmin
       .from('private_students')
@@ -121,14 +119,12 @@ export async function GET(request: Request) {
   ) {
     return NextResponse.json(
       {
-        error:
-          'هذه الجلسة غير مرتبطة بالجهاز المعتمد',
+        error: 'هذه الجلسة غير مرتبطة بالجهاز المعتمد',
       },
       { status: 403 }
     )
   }
 
-  // جلب المحاضرات المفعلة فقط
   const { data: lectures, error: lecturesError } =
     await supabaseAdmin
       .from('private_lectures')
@@ -143,4 +139,13 @@ export async function GET(request: Request) {
     console.error(lecturesError)
 
     return NextResponse.json(
-      { error: '
+      { error: 'تعذر تحميل المحاضرات' },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({
+    success: true,
+    lectures: lectures ?? [],
+  })
+}

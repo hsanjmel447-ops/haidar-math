@@ -77,7 +77,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('private_students')
       .select(
-        'id, name, access_code, is_active, expires_at, created_at'
+        'id, name, access_code, is_active, expires_at, created_at, device_id'
       )
       .order('created_at', {
         ascending: false,
@@ -221,7 +221,7 @@ export async function POST(request: Request) {
           expires_at: normalizedExpiresAt,
         })
         .select(
-          'id, name, access_code, is_active, expires_at, created_at'
+          'id, name, access_code, is_active, expires_at, created_at, device_id'
         )
         .single()
 
@@ -264,6 +264,7 @@ export async function POST(request: Request) {
 }
 
 // إيقاف / تفعيل الطالب
+// إعادة تعيين الجهاز
 // أو تعديل بيانات الطالب
 export async function PATCH(request: Request) {
   try {
@@ -295,6 +296,56 @@ export async function PATCH(request: Request) {
     }
 
     // =========================
+    // إعادة تعيين جهاز الطالب
+    // =========================
+
+    if (body.resetDevice === true) {
+      const { data: student, error } =
+        await supabaseAdmin
+          .from('private_students')
+          .update({
+            device_id: null,
+          })
+          .eq('id', studentId)
+          .select(
+            'id, name, access_code, is_active, expires_at, created_at, device_id'
+          )
+          .maybeSingle()
+
+      if (error) {
+        console.error(
+          'ADMIN STUDENT DEVICE RESET ERROR:',
+          error
+        )
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'تعذر إعادة تعيين الجهاز',
+          },
+          { status: 500 }
+        )
+      }
+
+      if (!student) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'الطالب غير موجود',
+          },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        student,
+        message:
+          'تمت إعادة تعيين جهاز الطالب بنجاح',
+      })
+    }
+
+    // =========================
     // إيقاف أو تفعيل الطالب
     // =========================
 
@@ -307,7 +358,7 @@ export async function PATCH(request: Request) {
           })
           .eq('id', studentId)
           .select(
-            'id, name, access_code, is_active, expires_at, created_at'
+            'id, name, access_code, is_active, expires_at, created_at, device_id'
           )
           .maybeSingle()
 
@@ -418,7 +469,8 @@ export async function PATCH(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            message: 'تاريخ انتهاء الاشتراك غير صحيح',
+            message:
+              'تاريخ انتهاء الاشتراك غير صحيح',
           },
           { status: 400 }
         )
@@ -438,7 +490,7 @@ export async function PATCH(request: Request) {
         })
         .eq('id', studentId)
         .select(
-          'id, name, access_code, is_active, expires_at, created_at'
+          'id, name, access_code, is_active, expires_at, created_at, device_id'
         )
         .maybeSingle()
 
@@ -470,7 +522,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       success: true,
       student,
-      message: 'تم تعديل بيانات الطالب بنجاح',
+      message:
+        'تم تعديل بيانات الطالب بنجاح',
     })
   } catch (error) {
     console.error(

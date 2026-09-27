@@ -9,6 +9,7 @@ type Student = {
   is_active: boolean
   expires_at: string | null
   created_at: string
+  device_id: string | null
 }
 
 export default function AdminPage() {
@@ -22,6 +23,9 @@ export default function AdminPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [updatingStudentId, setUpdatingStudentId] =
+    useState<number | null>(null)
+
+  const [resettingDeviceId, setResettingDeviceId] =
     useState<number | null>(null)
 
   const [editingStudentId, setEditingStudentId] =
@@ -233,6 +237,67 @@ export default function AdminPage() {
       setFormError('تعذر تحديث حالة الطالب')
     } finally {
       setUpdatingStudentId(null)
+    }
+  }
+
+  const resetDevice = async (student: Student) => {
+    if (!student.device_id) {
+      setFormError('هذا الطالب لا يوجد لديه جهاز مرتبط')
+      setFormSuccess('')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `هل تريد إعادة تعيين جهاز الطالب ${student.name}؟\n\nبعد التأكيد سيتم إلغاء ربط الجهاز الحالي، وأول جهاز يدخل بالكود سيصبح الجهاز الجديد.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setResettingDeviceId(student.id)
+    setFormError('')
+    setFormSuccess('')
+
+    try {
+      const response = await fetch('/api/admin-students', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id,
+          resetDevice: true,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setFormError(
+          data.message || 'تعذر إعادة تعيين الجهاز'
+        )
+        return
+      }
+
+      setStudents((currentStudents) =>
+        currentStudents.map((item) =>
+          item.id === student.id ? data.student : item
+        )
+      )
+
+      setFormSuccess(
+        `تمت إعادة تعيين جهاز ${student.name} بنجاح ✅`
+      )
+    } catch {
+      setFormError('تعذر إعادة تعيين الجهاز')
+    } finally {
+      setResettingDeviceId(null)
     }
   }
 
@@ -636,6 +701,18 @@ export default function AdminPage() {
                           الانتهاء:{' '}
                           {formatDate(student.expires_at)}
                         </p>
+
+                        <p className="mt-1 text-sm">
+                          {student.device_id ? (
+                            <span className="text-green-400">
+                              🔒 الجهاز مرتبط
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500">
+                              📱 لا يوجد جهاز مرتبط
+                            </span>
+                          )}
+                        </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -680,6 +757,22 @@ export default function AdminPage() {
                             : student.is_active
                               ? 'إيقاف الطالب'
                               : 'تفعيل الطالب'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            resetDevice(student)
+                          }
+                          disabled={
+                            resettingDeviceId === student.id ||
+                            !student.device_id
+                          }
+                          className="rounded-xl border border-blue-500/40 px-4 py-2 text-sm font-bold text-blue-400 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {resettingDeviceId === student.id
+                            ? 'جاري إعادة التعيين...'
+                            : '🔄 إعادة تعيين الجهاز'}
                         </button>
                       </div>
                     </div>

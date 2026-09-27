@@ -61,6 +61,7 @@ async function isAdminAuthenticated() {
   )
 }
 
+// جلب الطلاب
 export async function GET() {
   try {
     if (!(await isAdminAuthenticated())) {
@@ -117,6 +118,7 @@ export async function GET() {
   }
 }
 
+// إضافة طالب
 export async function POST(request: Request) {
   try {
     if (!(await isAdminAuthenticated())) {
@@ -132,6 +134,7 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     const name = String(body.name ?? '').trim()
+
     const accessCode = String(
       body.accessCode ?? ''
     ).trim()
@@ -171,6 +174,7 @@ export async function POST(request: Request) {
       )
     }
 
+    // التأكد من أن الكود غير مستخدم
     const { data: existingStudent } =
       await supabaseAdmin
         .from('private_students')
@@ -258,6 +262,9 @@ export async function POST(request: Request) {
     )
   }
 }
+
+// إيقاف / تفعيل الطالب
+// أو تعديل بيانات الطالب
 export async function PATCH(request: Request) {
   try {
     if (!(await isAdminAuthenticated())) {
@@ -273,7 +280,6 @@ export async function PATCH(request: Request) {
     const body = await request.json()
 
     const studentId = Number(body.studentId)
-    const isActive = body.isActive
 
     if (
       !Number.isInteger(studentId) ||
@@ -288,21 +294,147 @@ export async function PATCH(request: Request) {
       )
     }
 
-    if (typeof isActive !== 'boolean') {
+    // =========================
+    // إيقاف أو تفعيل الطالب
+    // =========================
+
+    if (typeof body.isActive === 'boolean') {
+      const { data: student, error } =
+        await supabaseAdmin
+          .from('private_students')
+          .update({
+            is_active: body.isActive,
+          })
+          .eq('id', studentId)
+          .select(
+            'id, name, access_code, is_active, expires_at, created_at'
+          )
+          .maybeSingle()
+
+      if (error) {
+        console.error(
+          'ADMIN STUDENTS STATUS UPDATE ERROR:',
+          error
+        )
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'تعذر تحديث حالة الطالب',
+          },
+          { status: 500 }
+        )
+      }
+
+      if (!student) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'الطالب غير موجود',
+          },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        student,
+        message: body.isActive
+          ? 'تم تفعيل الطالب'
+          : 'تم إيقاف الطالب',
+      })
+    }
+
+    // =========================
+    // تعديل بيانات الطالب
+    // =========================
+
+    const name = String(body.name ?? '').trim()
+
+    const accessCode = String(
+      body.accessCode ?? ''
+    ).trim()
+
+    const expiresAt = body.expiresAt
+      ? String(body.expiresAt)
+      : null
+
+    if (!name) {
       return NextResponse.json(
         {
           success: false,
-          message: 'حالة الاشتراك غير صحيحة',
+          message: 'أدخل اسم الطالب',
         },
         { status: 400 }
       )
+    }
+
+    if (!accessCode) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'أدخل كود الطالب',
+        },
+        { status: 400 }
+      )
+    }
+
+    if (accessCode.length < 6) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            'كود الطالب يجب أن يكون 6 خانات على الأقل',
+        },
+        { status: 400 }
+      )
+    }
+
+    // التأكد من أن الكود ليس لطالب آخر
+    const { data: existingStudent } =
+      await supabaseAdmin
+        .from('private_students')
+        .select('id')
+        .eq('access_code', accessCode)
+        .neq('id', studentId)
+        .maybeSingle()
+
+    if (existingStudent) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'هذا الكود مستخدم لطالب آخر',
+        },
+        { status: 409 }
+      )
+    }
+
+    let normalizedExpiresAt: string | null = null
+
+    if (expiresAt) {
+      const parsedDate = new Date(expiresAt)
+
+      if (Number.isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'تاريخ انتهاء الاشتراك غير صحيح',
+          },
+          { status: 400 }
+        )
+      }
+
+      normalizedExpiresAt =
+        parsedDate.toISOString()
     }
 
     const { data: student, error } =
       await supabaseAdmin
         .from('private_students')
         .update({
-          is_active: isActive,
+          name,
+          access_code: accessCode,
+          expires_at: normalizedExpiresAt,
         })
         .eq('id', studentId)
         .select(
@@ -312,14 +444,14 @@ export async function PATCH(request: Request) {
 
     if (error) {
       console.error(
-        'ADMIN STUDENTS UPDATE ERROR:',
+        'ADMIN STUDENTS EDIT ERROR:',
         error
       )
 
       return NextResponse.json(
         {
           success: false,
-          message: 'تعذر تحديث حالة الطالب',
+          message: 'تعذر تعديل بيانات الطالب',
         },
         { status: 500 }
       )
@@ -338,9 +470,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       success: true,
       student,
-      message: isActive
-        ? 'تم تفعيل الطالب'
-        : 'تم إيقاف الطالب',
+      message: 'تم تعديل بيانات الطالب بنجاح',
     })
   } catch (error) {
     console.error(

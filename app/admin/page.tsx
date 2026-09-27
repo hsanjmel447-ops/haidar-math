@@ -24,6 +24,15 @@ export default function AdminPage() {
   const [updatingStudentId, setUpdatingStudentId] =
     useState<number | null>(null)
 
+  const [editingStudentId, setEditingStudentId] =
+    useState<number | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editAccessCode, setEditAccessCode] = useState('')
+  const [editExpiresAt, setEditExpiresAt] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editSuccess, setEditSuccess] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+
   const [name, setName] = useState('')
   const [accessCode, setAccessCode] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
@@ -217,15 +226,108 @@ export default function AdminPage() {
 
       setStudents((currentStudents) =>
         currentStudents.map((item) =>
-          item.id === student.id
-            ? data.student
-            : item
+          item.id === student.id ? data.student : item
         )
       )
     } catch {
       setFormError('تعذر تحديث حالة الطالب')
     } finally {
       setUpdatingStudentId(null)
+    }
+  }
+
+  const startEditing = (student: Student) => {
+    setEditingStudentId(student.id)
+    setEditName(student.name)
+    setEditAccessCode(student.access_code)
+
+    if (student.expires_at) {
+      setEditExpiresAt(
+        new Date(student.expires_at)
+          .toISOString()
+          .slice(0, 10)
+      )
+    } else {
+      setEditExpiresAt('')
+    }
+
+    setEditError('')
+    setEditSuccess('')
+  }
+
+  const cancelEditing = () => {
+    setEditingStudentId(null)
+    setEditName('')
+    setEditAccessCode('')
+    setEditExpiresAt('')
+    setEditError('')
+    setEditSuccess('')
+  }
+
+  const saveStudentEdit = async (studentId: number) => {
+    if (!editName.trim()) {
+      setEditError('أدخل اسم الطالب')
+      return
+    }
+
+    if (!editAccessCode.trim()) {
+      setEditError('أدخل كود الطالب')
+      return
+    }
+
+    if (editAccessCode.trim().length < 6) {
+      setEditError('الكود يجب أن يكون 6 خانات على الأقل')
+      return
+    }
+
+    setSavingEdit(true)
+    setEditError('')
+    setEditSuccess('')
+
+    try {
+      const response = await fetch('/api/admin-students', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId,
+          name: editName.trim(),
+          accessCode: editAccessCode.trim(),
+          expiresAt: editExpiresAt || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setEditError(
+          data.message || 'تعذر تعديل بيانات الطالب'
+        )
+        return
+      }
+
+      setStudents((currentStudents) =>
+        currentStudents.map((item) =>
+          item.id === studentId ? data.student : item
+        )
+      )
+
+      setEditSuccess('تم حفظ التعديلات بنجاح ✅')
+
+      setTimeout(() => {
+        setEditingStudentId(null)
+        setEditSuccess('')
+      }, 700)
+    } catch {
+      setEditError('تعذر الاتصال، حاول مرة أخرى')
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -446,57 +548,142 @@ export default function AdminPage() {
                   key={student.id}
                   className="rounded-xl border border-zinc-800 bg-black p-4"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  {editingStudentId === student.id ? (
                     <div>
-                      <h3 className="text-lg font-bold">
-                        {student.name}
+                      <h3 className="text-lg font-bold text-yellow-400">
+                        تعديل بيانات الطالب
                       </h3>
 
-                      <p className="mt-1 text-sm text-zinc-400">
-                        الكود: {student.access_code}
-                      </p>
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) =>
+                            setEditName(e.target.value)
+                          }
+                          placeholder="اسم الطالب"
+                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
+                        />
 
-                      <p className="mt-1 text-sm text-zinc-500">
-                        الانتهاء:{' '}
-                        {formatDate(student.expires_at)}
-                      </p>
+                        <input
+                          type="text"
+                          value={editAccessCode}
+                          onChange={(e) =>
+                            setEditAccessCode(e.target.value)
+                          }
+                          placeholder="كود الاشتراك"
+                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
+                        />
+
+                        <input
+                          type="date"
+                          value={editExpiresAt}
+                          onChange={(e) =>
+                            setEditExpiresAt(e.target.value)
+                          }
+                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
+                        />
+                      </div>
+
+                      {editError && (
+                        <p className="mt-3 text-sm text-red-400">
+                          {editError}
+                        </p>
+                      )}
+
+                      {editSuccess && (
+                        <p className="mt-3 text-sm text-green-400">
+                          {editSuccess}
+                        </p>
+                      )}
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            saveStudentEdit(student.id)
+                          }
+                          disabled={savingEdit}
+                          className="rounded-xl bg-yellow-400 px-4 py-2 font-bold text-black disabled:opacity-50"
+                        >
+                          {savingEdit
+                            ? 'جاري الحفظ...'
+                            : 'حفظ التعديلات'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={cancelEditing}
+                          disabled={savingEdit}
+                          className="rounded-xl border border-zinc-700 px-4 py-2 font-bold text-zinc-300 disabled:opacity-50"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold">
+                          {student.name}
+                        </h3>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={
-                          student.is_active
-                            ? 'inline-block rounded-full bg-green-500/10 px-3 py-2 text-sm font-bold text-green-400'
-                            : 'inline-block rounded-full bg-red-500/10 px-3 py-2 text-sm font-bold text-red-400'
-                        }
-                      >
-                        {student.is_active
-                          ? 'فعال'
-                          : 'متوقف'}
-                      </span>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          الكود: {student.access_code}
+                        </p>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleStudent(student)
-                        }
-                        disabled={
-                          updatingStudentId === student.id
-                        }
-                        className={
-                          student.is_active
-                            ? 'rounded-xl border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 disabled:opacity-50'
-                            : 'rounded-xl border border-green-500/40 px-4 py-2 text-sm font-bold text-green-400 disabled:opacity-50'
-                        }
-                      >
-                        {updatingStudentId === student.id
-                          ? 'جاري التحديث...'
-                          : student.is_active
-                            ? 'إيقاف الطالب'
-                            : 'تفعيل الطالب'}
-                      </button>
+                        <p className="mt-1 text-sm text-zinc-500">
+                          الانتهاء:{' '}
+                          {formatDate(student.expires_at)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={
+                            student.is_active
+                              ? 'inline-block rounded-full bg-green-500/10 px-3 py-2 text-sm font-bold text-green-400'
+                              : 'inline-block rounded-full bg-red-500/10 px-3 py-2 text-sm font-bold text-red-400'
+                          }
+                        >
+                          {student.is_active
+                            ? 'فعال'
+                            : 'متوقف'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            startEditing(student)
+                          }
+                          className="rounded-xl border border-yellow-400/40 px-4 py-2 text-sm font-bold text-yellow-400"
+                        >
+                          ✏️ تعديل
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleStudent(student)
+                          }
+                          disabled={
+                            updatingStudentId === student.id
+                          }
+                          className={
+                            student.is_active
+                              ? 'rounded-xl border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 disabled:opacity-50'
+                              : 'rounded-xl border border-green-500/40 px-4 py-2 text-sm font-bold text-green-400 disabled:opacity-50'
+                          }
+                        >
+                          {updatingStudentId === student.id
+                            ? 'جاري التحديث...'
+                            : student.is_active
+                              ? 'إيقاف الطالب'
+                              : 'تفعيل الطالب'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

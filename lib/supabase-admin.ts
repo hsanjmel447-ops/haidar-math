@@ -1,7 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY!
+
+console.log(
+  'SUPABASE URL CHECK:',
+  JSON.stringify(supabaseUrl)
+)
+
+const supabaseSecretKey =
+  process.env.SUPABASE_SECRET_KEY!
 
 export const supabaseAdmin = createClient(
   supabaseUrl,

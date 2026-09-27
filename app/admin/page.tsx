@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-
+import AdminQuizzes from '@/components/admin-quizzes'
 type Student = {
   id: number
   name: string
@@ -911,7 +911,7 @@ export default function AdminPage() {
             )}
           </div>
         </section>
-
+<AdminQuizzes />
         <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <h2 className="text-2xl font-bold">
             إضافة طالب جديد

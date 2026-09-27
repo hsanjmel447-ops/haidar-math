@@ -4,14 +4,26 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 function isAdmin(request: Request) {
   const cookieHeader = request.headers.get('cookie') ?? ''
-  const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/)
 
-  if (!match) return false
+  const match = cookieHeader.match(
+    /(?:^|;\s*)admin_session=([^;]+)/
+  )
+
+  if (!match) {
+    return false
+  }
 
   const token = decodeURIComponent(match[1])
-  const [expiresAt, signature] = token.split('.')
 
-  if (!expiresAt || !signature) return false
+  const [role, expiresAt, signature] = token.split('.')
+
+  if (
+    role !== 'admin' ||
+    !expiresAt ||
+    !signature
+  ) {
+    return false
+  }
 
   const expires = Number(expiresAt)
 
@@ -21,16 +33,32 @@ function isAdmin(request: Request) {
 
   const secret = process.env.PRIVATE_SESSION_SECRET
 
-  if (!secret) return false
+  if (!secret) {
+    return false
+  }
+
+  const payload = `admin.${expiresAt}`
 
   const expectedSignature = createHmac('sha256', secret)
-    .update(expiresAt)
+    .update(payload)
     .digest('hex')
 
   try {
+    const signatureBuffer = Buffer.from(signature, 'hex')
+    const expectedBuffer = Buffer.from(
+      expectedSignature,
+      'hex'
+    )
+
+    if (
+      signatureBuffer.length !== expectedBuffer.length
+    ) {
+      return false
+    }
+
     return timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
+      signatureBuffer,
+      expectedBuffer
     )
   } catch {
     return false
@@ -53,7 +81,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error(error)
+    console.error('LOAD LECTURES ERROR:', error)
 
     return NextResponse.json(
       { error: 'حدث خطأ أثناء تحميل المحاضرات' },
@@ -116,7 +144,10 @@ export async function POST(request: Request) {
     try {
       const url = new URL(videoUrl)
 
-      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+      if (
+        url.protocol !== 'https:' &&
+        url.protocol !== 'http:'
+      ) {
         throw new Error('Invalid URL')
       }
     } catch {
@@ -147,7 +178,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error(error)
+      console.error('ADD LECTURE ERROR:', error)
 
       return NextResponse.json(
         { error: 'حدث خطأ أثناء إضافة المحاضرة' },
@@ -200,10 +231,16 @@ export async function PATCH(request: Request) {
         .single()
 
       if (error) {
-        console.error(error)
+        console.error(
+          'TOGGLE LECTURE ERROR:',
+          error
+        )
 
         return NextResponse.json(
-          { error: 'حدث خطأ أثناء تحديث حالة المحاضرة' },
+          {
+            error:
+              'حدث خطأ أثناء تحديث حالة المحاضرة',
+          },
           { status: 500 }
         )
       }
@@ -234,7 +271,10 @@ export async function PATCH(request: Request) {
     try {
       const url = new URL(videoUrl)
 
-      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+      if (
+        url.protocol !== 'https:' &&
+        url.protocol !== 'http:'
+      ) {
         throw new Error('Invalid URL')
       }
     } catch {
@@ -265,7 +305,7 @@ export async function PATCH(request: Request) {
       .single()
 
     if (error) {
-      console.error(error)
+      console.error('EDIT LECTURE ERROR:', error)
 
       return NextResponse.json(
         { error: 'حدث خطأ أثناء تعديل المحاضرة' },

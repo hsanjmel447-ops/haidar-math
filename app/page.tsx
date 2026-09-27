@@ -5,6 +5,7 @@ import { LatestLectures } from '@/components/latest-lectures'
 import { MinistryQuestions } from '@/components/ministry-questions'
 import { PastExams } from '@/components/past-exams'
 import { Quizzes } from '@/components/quizzes'
+import StudyPlan from '@/components/study-plan'
 import { NotificationButton } from '@/components/notification-button'
 import { Materials } from '@/components/materials'
 import { StudentResults } from '@/components/student-results'
@@ -16,6 +17,7 @@ export default function Page() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
+
       <main>
         <Hero />
         <Courses />
@@ -23,14 +25,21 @@ export default function Page() {
         <MinistryQuestions />
         <PastExams />
         <Quizzes />
+
+        <div className="mx-auto max-w-4xl px-4 py-6">
+          <StudyPlan />
+        </div>
+
         <div className="mx-auto flex max-w-4xl justify-center px-4 py-6">
-  <NotificationButton />
-</div>
+          <NotificationButton />
+        </div>
+
         <Materials />
         <StudentResults />
         <About />
         <Contact />
       </main>
+
       <SiteFooter />
     </div>
   )

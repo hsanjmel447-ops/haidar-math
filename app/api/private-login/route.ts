@@ -18,14 +18,17 @@ export async function POST(request: Request) {
       .eq('access_code', code.trim())
       .maybeSingle()
 
-    if (error) {
-      console.error('SUPABASE LOGIN ERROR:', JSON.stringify(error))
+   if (error) {
+  console.error('SUPABASE LOGIN ERROR:', JSON.stringify(error))
 
-      return NextResponse.json(
-        { success: false, message: 'حدث خطأ أثناء تسجيل الدخول' },
-        { status: 500 }
-      )
-    }
+  return NextResponse.json(
+    {
+      success: false,
+      message: `Supabase: ${error.message}`,
+    },
+    { status: 500 }
+  )
+}
 
     if (!student) {
       return NextResponse.json(

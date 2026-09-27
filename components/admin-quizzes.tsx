@@ -824,4 +824,56 @@ export default function AdminQuizzes() {
                         className={
                           question.correct_option === 'C'
                             ? 'rounded-lg border border-green-500/40 bg-green-500/10 p-3 text-green-400'
-                            : 'rounded-lg
+                            : 'rounded-lg bg-zinc-900 p-3'
+                              }
+>
+  C — {question.option_c}
+</p>
+
+<p
+  className={
+    question.correct_option === 'D'
+      ? 'rounded-lg border border-green-500/40 bg-green-500/10 p-3 text-green-400'
+      : 'rounded-lg bg-zinc-900 p-3'
+  }
+>
+  D — {question.option_d}
+</p>
+</div>
+
+<div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">
+  <span>
+    الترتيب: {question.sort_order}
+  </span>
+
+  <span>
+    • الدرجة: {question.points}
+  </span>
+</div>
+
+{question.explanation && (
+  <p className="mt-3 rounded-lg bg-zinc-900 p-3 text-sm text-zinc-300">
+    الشرح: {question.explanation}
+  </p>
+)}
+
+<button
+  type="button"
+  onClick={() => deleteQuestion(question)}
+  disabled={deletingQuestionId === question.id}
+  className="mt-4 rounded-xl border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 disabled:opacity-50"
+>
+  {deletingQuestionId === question.id
+    ? 'جاري الحذف...'
+    : 'حذف السؤال'}
+</button>
+</div>
+))}
+</div>
+)}
+</div>
+</div>
+)}
+</section>
+)
+}

@@ -10,7 +10,6 @@ function createSessionToken(studentId: number) {
   }
 
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000
-
   const payload = `${studentId}.${expiresAt}`
 
   const signature = createHmac('sha256', secret)
@@ -26,7 +25,9 @@ function createSessionToken(studentId: number) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+
     const code = String(body.code ?? '').trim()
+    const deviceId = String(body.deviceId ?? '').trim()
 
     if (!code) {
       return NextResponse.json(
@@ -38,9 +39,21 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!deviceId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'تعذر التحقق من الجهاز',
+        },
+        { status: 400 }
+      )
+    }
+
     const { data: student, error } = await supabaseAdmin
       .from('private_students')
-      .select('id, name, is_active, expires_at')
+      .select(
+        'id, name, is_active, expires_at, device_id'
+      )
       .eq('access_code', code)
       .maybeSingle()
 
@@ -84,6 +97,73 @@ export async function POST(request: Request) {
         {
           success: false,
           message: 'انتهت مدة الاشتراك',
+        },
+        { status: 403 }
+      )
+    }
+
+    // إذا لم يكن هناك جهاز مرتبط:
+    // هذا الجهاز يصبح الجهاز المعتمد للطالب
+    if (!student.device_id) {
+      const { error: deviceUpdateError } =
+        await supabaseAdmin
+          .from('private_students')
+          .update({
+            device_id: deviceId,
+          })
+          .eq('id', student.id)
+          .is('device_id', null)
+
+      if (deviceUpdateError) {
+        console.error(
+          'DEVICE BIND ERROR:',
+          deviceUpdateError
+        )
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'تعذر ربط الجهاز بالحساب',
+          },
+          { status: 500 }
+        )
+      }
+
+      // نقرأ الطالب مرة ثانية للتأكد من الجهاز المرتبط فعلياً
+      const { data: updatedStudent, error: recheckError } =
+        await supabaseAdmin
+          .from('private_students')
+          .select('device_id')
+          .eq('id', student.id)
+          .single()
+
+      if (recheckError || !updatedStudent) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'تعذر التحقق من الجهاز',
+          },
+          { status: 500 }
+        )
+      }
+
+      if (updatedStudent.device_id !== deviceId) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              'هذا الكود مرتبط بجهاز آخر. تواصل مع الأستاذ لإعادة تعيين الجهاز.',
+          },
+          { status: 403 }
+        )
+      }
+    } else if (student.device_id !== deviceId) {
+      // الكود مرتبط مسبقاً بجهاز مختلف
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            'هذا الكود مرتبط بجهاز آخر. تواصل مع الأستاذ لإعادة تعيين الجهاز.',
         },
         { status: 403 }
       )

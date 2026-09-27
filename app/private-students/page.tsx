@@ -7,6 +7,19 @@ type Student = {
   name: string
 }
 
+function getDeviceId() {
+  const storageKey = 'private_student_device_id'
+
+  let deviceId = localStorage.getItem(storageKey)
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID()
+    localStorage.setItem(storageKey, deviceId)
+  }
+
+  return deviceId
+}
+
 export default function PrivateStudentsPage() {
   const [code, setCode] = useState('')
   const [student, setStudent] = useState<Student | null>(null)
@@ -18,10 +31,15 @@ export default function PrivateStudentsPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/private-session', {
-          method: 'GET',
-          cache: 'no-store',
-        })
+        const deviceId = getDeviceId()
+
+const response = await fetch('/api/private-session', {
+  method: 'GET',
+  cache: 'no-store',
+  headers: {
+    'x-device-id': deviceId,
+  },
+})
 
         const data = await response.json()
 
@@ -48,6 +66,8 @@ export default function PrivateStudentsPage() {
     setError('')
 
     try {
+      const deviceId = getDeviceId()
+
       const response = await fetch('/api/private-login', {
         method: 'POST',
         headers: {
@@ -55,6 +75,7 @@ export default function PrivateStudentsPage() {
         },
         body: JSON.stringify({
           code: code.trim(),
+          deviceId,
         }),
       })
 
@@ -135,7 +156,9 @@ export default function PrivateStudentsPage() {
               disabled={loggingOut}
               className="mt-7 rounded-xl border border-zinc-700 px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
+              {loggingOut
+                ? 'جاري تسجيل الخروج...'
+                : 'تسجيل الخروج'}
             </button>
           </div>
         </div>
@@ -188,7 +211,9 @@ export default function PrivateStudentsPage() {
           disabled={loading}
           className="mt-4 w-full rounded-xl bg-yellow-400 px-4 py-4 text-lg font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'جاري التحقق...' : 'دخول طلاب الخاص'}
+          {loading
+            ? 'جاري التحقق...'
+            : 'دخول طلاب الخاص'}
         </button>
 
         <p className="mt-5 text-center text-xs text-zinc-500">

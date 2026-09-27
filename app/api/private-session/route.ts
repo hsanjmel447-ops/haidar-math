@@ -36,8 +36,15 @@ function verifySessionToken(token: string) {
     .update(payload)
     .digest('hex')
 
-  const receivedBuffer = Buffer.from(receivedSignature, 'utf8')
-  const expectedBuffer = Buffer.from(expectedSignature, 'utf8')
+  const receivedBuffer = Buffer.from(
+    receivedSignature,
+    'utf8'
+  )
+
+  const expectedBuffer = Buffer.from(
+    expectedSignature,
+    'utf8'
+  )
 
   if (receivedBuffer.length !== expectedBuffer.length) {
     return null
@@ -53,7 +60,7 @@ function verifySessionToken(token: string) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const cookieStore = await cookies()
 
@@ -82,24 +89,53 @@ export async function GET() {
         { status: 401 }
       )
 
-      response.cookies.delete('private_student_session')
+      response.cookies.delete(
+        'private_student_session'
+      )
 
       return response
     }
 
-    const { data: student, error } = await supabaseAdmin
-      .from('private_students')
-      .select('id, name, is_active, expires_at')
-      .eq('id', session.studentId)
-      .maybeSingle()
+    const deviceId = request.headers
+      .get('x-device-id')
+      ?.trim()
+
+    if (!deviceId) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          message: 'تعذر التحقق من الجهاز',
+        },
+        { status: 401 }
+      )
+
+      response.cookies.delete(
+        'private_student_session'
+      )
+
+      return response
+    }
+
+    const { data: student, error } =
+      await supabaseAdmin
+        .from('private_students')
+        .select(
+          'id, name, is_active, expires_at, device_id'
+        )
+        .eq('id', session.studentId)
+        .maybeSingle()
 
     if (error) {
-      console.error('PRIVATE SESSION ERROR:', error)
+      console.error(
+        'PRIVATE SESSION ERROR:',
+        error
+      )
 
       return NextResponse.json(
         {
           success: false,
-          message: 'حدث خطأ في الاتصال بقاعدة البيانات',
+          message:
+            'حدث خطأ في الاتصال بقاعدة البيانات',
         },
         { status: 500 }
       )
@@ -114,14 +150,17 @@ export async function GET() {
         { status: 401 }
       )
 
-      response.cookies.delete('private_student_session')
+      response.cookies.delete(
+        'private_student_session'
+      )
 
       return response
     }
 
     if (
       student.expires_at &&
-      new Date(student.expires_at).getTime() < Date.now()
+      new Date(student.expires_at).getTime() <
+        Date.now()
     ) {
       const response = NextResponse.json(
         {
@@ -131,7 +170,29 @@ export async function GET() {
         { status: 403 }
       )
 
-      response.cookies.delete('private_student_session')
+      response.cookies.delete(
+        'private_student_session'
+      )
+
+      return response
+    }
+
+    if (
+      !student.device_id ||
+      student.device_id !== deviceId
+    ) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          message:
+            'هذه الجلسة غير مرتبطة بالجهاز المعتمد',
+        },
+        { status: 403 }
+      )
+
+      response.cookies.delete(
+        'private_student_session'
+      )
 
       return response
     }
@@ -144,7 +205,10 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('PRIVATE SESSION ERROR:', error)
+    console.error(
+      'PRIVATE SESSION ERROR:',
+      error
+    )
 
     return NextResponse.json(
       {

@@ -258,3 +258,102 @@ export async function POST(request: Request) {
     )
   }
 }
+export async function PATCH(request: Request) {
+  try {
+    if (!(await isAdminAuthenticated())) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'غير مصرح لك',
+        },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+
+    const studentId = Number(body.studentId)
+    const isActive = body.isActive
+
+    if (
+      !Number.isInteger(studentId) ||
+      studentId <= 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'رقم الطالب غير صحيح',
+        },
+        { status: 400 }
+      )
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'حالة الاشتراك غير صحيحة',
+        },
+        { status: 400 }
+      )
+    }
+
+    const { data: student, error } =
+      await supabaseAdmin
+        .from('private_students')
+        .update({
+          is_active: isActive,
+        })
+        .eq('id', studentId)
+        .select(
+          'id, name, access_code, is_active, expires_at, created_at'
+        )
+        .maybeSingle()
+
+    if (error) {
+      console.error(
+        'ADMIN STUDENTS UPDATE ERROR:',
+        error
+      )
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'تعذر تحديث حالة الطالب',
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!student) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'الطالب غير موجود',
+        },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      student,
+      message: isActive
+        ? 'تم تفعيل الطالب'
+        : 'تم إيقاف الطالب',
+    })
+  } catch (error) {
+    console.error(
+      'ADMIN STUDENTS UPDATE ERROR:',
+      error
+    )
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'حدث خطأ غير متوقع',
+      },
+      { status: 500 }
+    )
+  }
+}

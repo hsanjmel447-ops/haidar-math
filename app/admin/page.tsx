@@ -21,6 +21,8 @@ export default function AdminPage() {
 
   const [students, setStudents] = useState<Student[]>([])
   const [studentsLoading, setStudentsLoading] = useState(false)
+  const [updatingStudentId, setUpdatingStudentId] =
+    useState<number | null>(null)
 
   const [name, setName] = useState('')
   const [accessCode, setAccessCode] = useState('')
@@ -179,6 +181,51 @@ export default function AdminPage() {
       setFormError('تعذر الاتصال، حاول مرة أخرى')
     } finally {
       setAddingStudent(false)
+    }
+  }
+
+  const toggleStudent = async (student: Student) => {
+    setUpdatingStudentId(student.id)
+    setFormError('')
+    setFormSuccess('')
+
+    try {
+      const response = await fetch('/api/admin-students', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id,
+          isActive: !student.is_active,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setFormError(
+          data.message || 'تعذر تحديث حالة الطالب'
+        )
+        return
+      }
+
+      setStudents((currentStudents) =>
+        currentStudents.map((item) =>
+          item.id === student.id
+            ? data.student
+            : item
+        )
+      )
+    } catch {
+      setFormError('تعذر تحديث حالة الطالب')
+    } finally {
+      setUpdatingStudentId(null)
     }
   }
 
@@ -399,7 +446,7 @@ export default function AdminPage() {
                   key={student.id}
                   className="rounded-xl border border-zinc-800 bg-black p-4"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h3 className="text-lg font-bold">
                         {student.name}
@@ -415,18 +462,39 @@ export default function AdminPage() {
                       </p>
                     </div>
 
-                    <div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={
                           student.is_active
-                            ? 'inline-block rounded-full bg-green-500/10 px-3 py-1 text-sm font-bold text-green-400'
-                            : 'inline-block rounded-full bg-red-500/10 px-3 py-1 text-sm font-bold text-red-400'
+                            ? 'inline-block rounded-full bg-green-500/10 px-3 py-2 text-sm font-bold text-green-400'
+                            : 'inline-block rounded-full bg-red-500/10 px-3 py-2 text-sm font-bold text-red-400'
                         }
                       >
                         {student.is_active
                           ? 'فعال'
                           : 'متوقف'}
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleStudent(student)
+                        }
+                        disabled={
+                          updatingStudentId === student.id
+                        }
+                        className={
+                          student.is_active
+                            ? 'rounded-xl border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 disabled:opacity-50'
+                            : 'rounded-xl border border-green-500/40 px-4 py-2 text-sm font-bold text-green-400 disabled:opacity-50'
+                        }
+                      >
+                        {updatingStudentId === student.id
+                          ? 'جاري التحديث...'
+                          : student.is_active
+                            ? 'إيقاف الطالب'
+                            : 'تفعيل الطالب'}
+                      </button>
                     </div>
                   </div>
                 </div>

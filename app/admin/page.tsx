@@ -12,6 +12,17 @@ type Student = {
   device_id: string | null
 }
 
+type Lecture = {
+  id: number
+  title: string
+  chapter: string
+  topic: string
+  video_url: string
+  is_active: boolean
+  sort_order: number
+  created_at: string
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
@@ -20,11 +31,23 @@ export default function AdminPage() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
+  const [lectures, setLectures] = useState<Lecture[]>([])
+  const [lecturesLoading, setLecturesLoading] = useState(false)
+  const [lectureTitle, setLectureTitle] = useState('')
+  const [lectureChapter, setLectureChapter] = useState('')
+  const [lectureTopic, setLectureTopic] = useState('')
+  const [lectureVideoUrl, setLectureVideoUrl] = useState('')
+  const [lectureSortOrder, setLectureSortOrder] = useState('')
+  const [addingLecture, setAddingLecture] = useState(false)
+  const [lectureError, setLectureError] = useState('')
+  const [lectureSuccess, setLectureSuccess] = useState('')
+  const [updatingLectureId, setUpdatingLectureId] =
+    useState<number | null>(null)
+
   const [students, setStudents] = useState<Student[]>([])
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [updatingStudentId, setUpdatingStudentId] =
     useState<number | null>(null)
-
   const [resettingDeviceId, setResettingDeviceId] =
     useState<number | null>(null)
 
@@ -43,6 +66,38 @@ export default function AdminPage() {
   const [formError, setFormError] = useState('')
   const [formSuccess, setFormSuccess] = useState('')
   const [addingStudent, setAddingStudent] = useState(false)
+
+  const loadLectures = useCallback(async () => {
+    setLecturesLoading(true)
+    setLectureError('')
+
+    try {
+      const response = await fetch('/api/admin-lectures', {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setLectureError(
+          data.error || 'تعذر تحميل المحاضرات'
+        )
+        return
+      }
+
+      setLectures(data.lectures ?? [])
+    } catch {
+      setLectureError('تعذر تحميل المحاضرات')
+    } finally {
+      setLecturesLoading(false)
+    }
+  }, [])
 
   const loadStudents = useCallback(async () => {
     setStudentsLoading(true)
@@ -96,8 +151,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin) {
       loadStudents()
+      loadLectures()
     }
-  }, [isAdmin, loadStudents])
+  }, [isAdmin, loadStudents, loadLectures])
 
   const login = async () => {
     if (!password) {
@@ -123,7 +179,9 @@ export default function AdminPage() {
 
       if (!response.ok || !data.success) {
         setLoginError(
-          data.message || 'كلمة المرور غير صحيحة'
+          data.message ||
+            data.error ||
+            'كلمة المرور غير صحيحة'
         )
         return
       }
@@ -134,6 +192,128 @@ export default function AdminPage() {
       setLoginError('تعذر الاتصال، حاول مرة أخرى')
     } finally {
       setLoginLoading(false)
+    }
+  }
+
+  const addLecture = async () => {
+    if (!lectureTitle.trim()) {
+      setLectureError('أدخل عنوان المحاضرة')
+      return
+    }
+
+    if (!lectureChapter.trim()) {
+      setLectureError('أدخل الفصل')
+      return
+    }
+
+    if (!lectureTopic.trim()) {
+      setLectureError('أدخل الموضوع')
+      return
+    }
+
+    if (!lectureVideoUrl.trim()) {
+      setLectureError('أدخل رابط الفيديو')
+      return
+    }
+
+    setAddingLecture(true)
+    setLectureError('')
+    setLectureSuccess('')
+
+    try {
+      const response = await fetch('/api/admin-lectures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: lectureTitle.trim(),
+          chapter: lectureChapter.trim(),
+          topic: lectureTopic.trim(),
+          videoUrl: lectureVideoUrl.trim(),
+          sortOrder: Number(lectureSortOrder || 0),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setLectureError(
+          data.message ||
+            data.error ||
+            'تعذر إضافة المحاضرة'
+        )
+        return
+      }
+
+      setLectureTitle('')
+      setLectureChapter('')
+      setLectureTopic('')
+      setLectureVideoUrl('')
+      setLectureSortOrder('')
+      setLectureSuccess('تمت إضافة المحاضرة بنجاح ✅')
+
+      await loadLectures()
+    } catch {
+      setLectureError('تعذر الاتصال، حاول مرة أخرى')
+    } finally {
+      setAddingLecture(false)
+    }
+  }
+
+  const toggleLecture = async (lecture: Lecture) => {
+    setUpdatingLectureId(lecture.id)
+    setLectureError('')
+    setLectureSuccess('')
+
+    try {
+      const response = await fetch('/api/admin-lectures', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lectureId: lecture.id,
+          isActive: !lecture.is_active,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.status === 401) {
+        setIsAdmin(false)
+        return
+      }
+
+      if (!response.ok || !data.success) {
+        setLectureError(
+          data.message ||
+            data.error ||
+            'تعذر تحديث المحاضرة'
+        )
+        return
+      }
+
+      setLectures((currentLectures) =>
+        currentLectures.map((item) =>
+          item.id === lecture.id ? data.lecture : item
+        )
+      )
+
+      setLectureSuccess(
+        lecture.is_active
+          ? 'تم إيقاف المحاضرة ✅'
+          : 'تم تفعيل المحاضرة ✅'
+      )
+    } catch {
+      setLectureError('تعذر تحديث المحاضرة')
+    } finally {
+      setUpdatingLectureId(null)
     }
   }
 
@@ -179,7 +359,9 @@ export default function AdminPage() {
 
       if (!response.ok || !data.success) {
         setFormError(
-          data.message || 'تعذر إضافة الطالب'
+          data.message ||
+            data.error ||
+            'تعذر إضافة الطالب'
         )
         return
       }
@@ -223,7 +405,9 @@ export default function AdminPage() {
 
       if (!response.ok || !data.success) {
         setFormError(
-          data.message || 'تعذر تحديث حالة الطالب'
+          data.message ||
+            data.error ||
+            'تعذر تحديث حالة الطالب'
         )
         return
       }
@@ -242,7 +426,9 @@ export default function AdminPage() {
 
   const resetDevice = async (student: Student) => {
     if (!student.device_id) {
-      setFormError('هذا الطالب لا يوجد لديه جهاز مرتبط')
+      setFormError(
+        'هذا الطالب لا يوجد لديه جهاز مرتبط'
+      )
       setFormSuccess('')
       return
     }
@@ -280,7 +466,9 @@ export default function AdminPage() {
 
       if (!response.ok || !data.success) {
         setFormError(
-          data.message || 'تعذر إعادة تعيين الجهاز'
+          data.message ||
+            data.error ||
+            'تعذر إعادة تعيين الجهاز'
         )
         return
       }
@@ -372,7 +560,9 @@ export default function AdminPage() {
 
       if (!response.ok || !data.success) {
         setEditError(
-          data.message || 'تعذر تعديل بيانات الطالب'
+          data.message ||
+            data.error ||
+            'تعذر تعديل بيانات الطالب'
         )
         return
       }
@@ -499,6 +689,228 @@ export default function AdminPage() {
             إدارة طلاب الخاص والاشتراكات.
           </p>
         </div>
+
+        <section className="mt-6 rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-bold">
+                🎥 إدارة المحاضرات الخاصة
+              </h2>
+
+              <p className="mt-1 text-sm text-zinc-400">
+                إضافة روابط محاضرات طلاب الخاص
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={loadLectures}
+              disabled={lecturesLoading}
+              className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-bold disabled:opacity-50"
+            >
+              {lecturesLoading ? 'جاري التحديث...' : 'تحديث'}
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm text-zinc-400">
+                الفصل
+              </label>
+
+              <input
+                type="text"
+                value={lectureChapter}
+                onChange={(e) =>
+                  setLectureChapter(e.target.value)
+                }
+                placeholder="مثال: الفصل الأول"
+                className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm text-zinc-400">
+                الموضوع
+              </label>
+
+              <input
+                type="text"
+                value={lectureTopic}
+                onChange={(e) =>
+                  setLectureTopic(e.target.value)
+                }
+                placeholder="مثال: القطع المكافئ"
+                className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm text-zinc-400">
+                اسم الدرس
+              </label>
+
+              <input
+                type="text"
+                value={lectureTitle}
+                onChange={(e) =>
+                  setLectureTitle(e.target.value)
+                }
+                placeholder="مثال: الدرس الأول"
+                className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm text-zinc-400">
+                ترتيب الدرس
+              </label>
+
+              <input
+                type="number"
+                value={lectureSortOrder}
+                onChange={(e) =>
+                  setLectureSortOrder(e.target.value)
+                }
+                placeholder="مثال: 1"
+                min="0"
+                className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm text-zinc-400">
+                رابط محاضرة YouTube
+              </label>
+
+              <input
+                type="url"
+                value={lectureVideoUrl}
+                onChange={(e) =>
+                  setLectureVideoUrl(e.target.value)
+                }
+                placeholder="الصق رابط البث أو الفيديو هنا"
+                className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
+              />
+            </div>
+          </div>
+
+          {lectureError && (
+            <p className="mt-4 text-sm text-red-400">
+              {lectureError}
+            </p>
+          )}
+
+          {lectureSuccess && (
+            <p className="mt-4 text-sm text-green-400">
+              {lectureSuccess}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={addLecture}
+            disabled={addingLecture}
+            className="mt-5 w-full rounded-xl bg-yellow-400 px-5 py-4 font-bold text-black disabled:opacity-50 md:w-auto"
+          >
+            {addingLecture
+              ? 'جاري إضافة المحاضرة...'
+              : 'إضافة المحاضرة'}
+          </button>
+
+          <div className="mt-8 border-t border-zinc-800 pt-6">
+            <h3 className="text-xl font-bold">
+              المحاضرات المضافة
+            </h3>
+
+            <p className="mt-1 text-sm text-zinc-400">
+              العدد: {lectures.length}
+            </p>
+
+            {lecturesLoading && lectures.length === 0 ? (
+              <p className="mt-5 text-zinc-400">
+                جاري تحميل المحاضرات...
+              </p>
+            ) : lectures.length === 0 ? (
+              <p className="mt-5 text-zinc-400">
+                لا توجد محاضرات مضافة حالياً.
+              </p>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {lectures.map((lecture) => (
+                  <div
+                    key={lecture.id}
+                    className="rounded-xl border border-zinc-800 bg-black p-4"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-yellow-400">
+                          {lecture.chapter}
+                        </p>
+
+                        <p className="mt-1 text-sm text-zinc-400">
+                          {lecture.topic}
+                        </p>
+
+                        <h4 className="mt-2 text-lg font-bold">
+                          {lecture.title}
+                        </h4>
+
+                        <p className="mt-1 text-sm text-zinc-500">
+                          الترتيب: {lecture.sort_order}
+                        </p>
+
+                        <a
+                          href={lecture.video_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-block text-sm font-bold text-blue-400 underline"
+                        >
+                          فتح رابط المحاضرة
+                        </a>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={
+                            lecture.is_active
+                              ? 'rounded-full bg-green-500/10 px-3 py-2 text-sm font-bold text-green-400'
+                              : 'rounded-full bg-red-500/10 px-3 py-2 text-sm font-bold text-red-400'
+                          }
+                        >
+                          {lecture.is_active
+                            ? 'ظاهرة'
+                            : 'مخفية'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleLecture(lecture)
+                          }
+                          disabled={
+                            updatingLectureId === lecture.id
+                          }
+                          className={
+                            lecture.is_active
+                              ? 'rounded-xl border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 disabled:opacity-50'
+                              : 'rounded-xl border border-green-500/40 px-4 py-2 text-sm font-bold text-green-400 disabled:opacity-50'
+                          }
+                        >
+                          {updatingLectureId === lecture.id
+                            ? 'جاري التحديث...'
+                            : lecture.is_active
+                              ? 'إخفاء المحاضرة'
+                              : 'إظهار المحاضرة'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
 
         <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <h2 className="text-2xl font-bold">

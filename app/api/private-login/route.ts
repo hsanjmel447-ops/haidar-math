@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: student, error } = await supabase
+    const { data: student, error } = await supabaseAdmin
       .from('private_students')
       .select('id, name, is_active, expires_at')
       .eq('access_code', code.trim())

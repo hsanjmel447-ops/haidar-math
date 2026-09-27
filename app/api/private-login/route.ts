@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (error) {
-      console.error(error)
+      console.error('SUPABASE LOGIN ERROR:', JSON.stringify(error))
 
       return NextResponse.json(
         { success: false, message: 'حدث خطأ أثناء تسجيل الدخول' },

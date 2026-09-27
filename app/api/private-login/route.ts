@@ -1,28 +1,52 @@
 import { NextResponse } from 'next/server'
+import { createHmac } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+
+function createSessionToken(studentId: number) {
+  const secret = process.env.PRIVATE_SESSION_SECRET
+
+  if (!secret) {
+    throw new Error('PRIVATE_SESSION_SECRET is missing')
+  }
+
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000
+
+  const payload = `${studentId}.${expiresAt}`
+
+  const signature = createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+
+  return {
+    token: `${payload}.${signature}`,
+    expiresAt,
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const code = String(body.code ?? '').trim()
 
-    console.log('LOGIN CODE RECEIVED:', JSON.stringify(code))
-
     if (!code) {
       return NextResponse.json(
-        { success: false, message: 'أدخل كود الاشتراك' },
+        {
+          success: false,
+          message: 'أدخل كود الاشتراك',
+        },
         { status: 400 }
       )
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data: student, error } = await supabaseAdmin
       .from('private_students')
-      .select('id, name, access_code, is_active, expires_at')
-
-    console.log('SUPABASE DATA:', JSON.stringify(data))
-    console.log('SUPABASE ERROR:', JSON.stringify(error))
+      .select('id, name, is_active, expires_at')
+      .eq('access_code', code)
+      .maybeSingle()
 
     if (error) {
+      console.error('SUPABASE LOGIN ERROR:', error)
+
       return NextResponse.json(
         {
           success: false,
@@ -31,10 +55,6 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
-
-    const student = data?.find(
-      (item) => String(item.access_code).trim() === code
-    )
 
     if (!student) {
       return NextResponse.json(
@@ -69,13 +89,27 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({
+    const session = createSessionToken(student.id)
+
+    const response = NextResponse.json({
       success: true,
       student: {
         id: student.id,
         name: student.name,
       },
     })
+
+    response.cookies.set({
+      name: 'private_student_session',
+      value: session.token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      expires: new Date(session.expiresAt),
+    })
+
+    return response
   } catch (error) {
     console.error('PRIVATE LOGIN ERROR:', error)
 

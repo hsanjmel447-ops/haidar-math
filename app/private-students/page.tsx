@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type Student = {
   id: number
@@ -12,6 +12,31 @@ export default function PrivateStudentsPage() {
   const [student, setStudent] = useState<Student | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/private-session', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success && data.student) {
+          setStudent(data.student)
+        }
+      } catch {
+        // إذا فشل فحص الجلسة تظهر شاشة تسجيل الدخول
+      } finally {
+        setCheckingSession(false)
+      }
+    }
+
+    checkSession()
+  }, [])
 
   const enterPrivateArea = async () => {
     if (!code.trim()) {
@@ -41,11 +66,46 @@ export default function PrivateStudentsPage() {
       }
 
       setStudent(data.student)
+      setCode('')
     } catch {
       setError('تعذر الاتصال، حاول مرة أخرى')
     } finally {
       setLoading(false)
     }
+  }
+
+  const logout = async () => {
+    setLoggingOut(true)
+
+    try {
+      await fetch('/api/private-logout', {
+        method: 'POST',
+      })
+    } catch {
+      // حتى إذا فشل الطلب نعيد المستخدم لشاشة الدخول
+    } finally {
+      setStudent(null)
+      setCode('')
+      setError('')
+      setLoggingOut(false)
+    }
+  }
+
+  if (checkingSession) {
+    return (
+      <main
+        dir="rtl"
+        className="flex min-h-screen items-center justify-center bg-black px-4 text-white"
+      >
+        <div className="text-center">
+          <div className="text-4xl">🔒</div>
+
+          <p className="mt-4 text-zinc-400">
+            جاري التحقق من تسجيل الدخول...
+          </p>
+        </div>
+      </main>
+    )
   }
 
   if (student) {
@@ -71,13 +131,11 @@ export default function PrivateStudentsPage() {
 
             <button
               type="button"
-              onClick={() => {
-                setStudent(null)
-                setCode('')
-              }}
-              className="mt-7 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              onClick={logout}
+              disabled={loggingOut}
+              className="mt-7 rounded-xl border border-zinc-700 px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-50"
             >
-              تسجيل الخروج
+              {loggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
             </button>
           </div>
         </div>

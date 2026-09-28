@@ -15,7 +15,15 @@ type Student = {
   created_at: string
   device_id: string | null
 }
-
+type AdminSection =
+  | 'home'
+  | 'students'
+  | 'lectures'
+  | 'quizzes'
+  | 'study-plan'
+  | 'weekly-exams'
+  | 'ministerial-reviews'
+  | 'basic-lessons'
 type Lecture = {
   id: number
   title: string
@@ -28,6 +36,13 @@ type Lecture = {
 }
 
 export default function AdminPage() {
+const [activeSection, setActiveSection] =
+  useState<AdminSection>('home')
+
+const goAdminHome = () => {
+  setActiveSection('home')
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
@@ -693,7 +708,96 @@ export default function AdminPage() {
             إدارة طلاب الخاص والاشتراكات.
           </p>
         </div>
+        {activeSection === 'home' && (
+  <section className="mt-6">
+    <div className="mb-5">
+      <h2 className="text-2xl font-black">
+        إدارة المنصة
+      </h2>
 
+      <p className="mt-2 text-sm text-zinc-400">
+        اختر القسم الذي تريد إدارته
+      </p>
+    </div>
+
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      {[
+        {
+          id: 'students',
+          icon: '👥',
+          title: 'طلاب الخاص',
+          desc: 'الطلاب والاشتراكات',
+        },
+        {
+          id: 'lectures',
+          icon: '🎥',
+          title: 'المحاضرات',
+          desc: 'محاضرات طلاب الخاص',
+        },
+        {
+          id: 'quizzes',
+          icon: '📝',
+          title: 'الاختبارات اليومية',
+          desc: 'الأسئلة والاختبارات',
+        },
+        {
+          id: 'weekly-exams',
+          icon: '📋',
+          title: 'الاختبارات الأسبوعية',
+          desc: 'الاختبارات والتصحيح',
+        },
+        {
+          id: 'study-plan',
+          icon: '📅',
+          title: 'المهمة اليومية',
+          desc: 'خطة الدراسة اليومية',
+        },
+        {
+          id: 'ministerial-reviews',
+          icon: '📚',
+          title: 'الأسئلة الوزارية',
+          desc: 'إدارة المراجعات',
+        },
+        {
+          id: 'basic-lessons',
+          icon: '📐',
+          title: 'شرح الأساسيات',
+          desc: 'محاضرات الأساسيات',
+        },
+      ].map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() =>
+            setActiveSection(item.id as AdminSection)
+          }
+          className="group min-h-[160px] rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-center transition hover:border-yellow-400"
+        >
+          <div className="text-4xl transition group-hover:scale-110">
+            {item.icon}
+          </div>
+
+          <h3 className="mt-3 font-black text-yellow-400">
+            {item.title}
+          </h3>
+
+          <p className="mt-2 text-xs leading-5 text-zinc-500">
+            {item.desc}
+          </p>
+        </button>
+      ))}
+    </div>
+  </section>
+)}
+{activeSection === 'lectures' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
         <section className="mt-6 rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -915,11 +1019,81 @@ export default function AdminPage() {
             )}
           </div>
         </section>
-<AdminQuizzes />
-<AdminStudyPlan />
-<AdminWeeklyExams />
-<AdminMinisterialReviews />
-<AdminBasicLessons />
+          </>
+)}
+{activeSection === 'quizzes' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
+    <AdminQuizzes />
+  </>
+)}
+
+{activeSection === 'study-plan' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
+    <AdminStudyPlan />
+  </>
+)}
+
+{activeSection === 'weekly-exams' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
+    <AdminWeeklyExams />
+  </>
+)}
+
+{activeSection === 'ministerial-reviews' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
+    <AdminMinisterialReviews />
+  </>
+)}
+
+{activeSection === 'basic-lessons' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
+    <AdminBasicLessons />
+  </>
+)}
+{activeSection === 'students' && (
+  <>
+    <button
+      type="button"
+      onClick={goAdminHome}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الإدارة
+    </button>
         <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <h2 className="text-2xl font-bold">
             إضافة طالب جديد
@@ -1202,6 +1376,8 @@ export default function AdminPage() {
             </div>
           )}
         </section>
+          </>
+)}
       </div>
     </main>
   )

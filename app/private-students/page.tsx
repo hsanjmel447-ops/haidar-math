@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import PrivateQuizzes from '@/components/private-quizzes'
 import PrivateWeeklyExams from '@/components/private-weekly-exams'
+import PrivateLeaderboard from '@/components/private-leaderboard'
 type Student = {
   id: number
   name: string
@@ -261,6 +262,7 @@ export default function PrivateStudentsPage() {
     </button>
 
     <PrivateWeeklyExams />
+    <PrivateLeaderboard />
   </div>
 ) : showQuizzes ? (
   <PrivateQuizzes

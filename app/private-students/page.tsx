@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import PrivateQuizzes from '@/components/private-quizzes'
+import PrivateWeeklyExams from '@/components/private-weekly-exams'
 type Student = {
   id: number
   name: string
@@ -40,6 +41,7 @@ export default function PrivateStudentsPage() {
   const [showLectures, setShowLectures] = useState(false)
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [showQuizzes, setShowQuizzes] = useState(false)
+  const [showWeeklyExams, setShowWeeklyExams] = useState(false)
   const [lecturesLoading, setLecturesLoading] = useState(false)
   const [lecturesError, setLecturesError] = useState('')
 
@@ -248,7 +250,19 @@ export default function PrivateStudentsPage() {
             </div>
           </div>
 
-          {showQuizzes ? (
+          {showWeeklyExams ? (
+  <div>
+    <button
+      type="button"
+      onClick={() => setShowWeeklyExams(false)}
+      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      رجوع للمحتوى
+    </button>
+
+    <PrivateWeeklyExams />
+  </div>
+) : showQuizzes ? (
   <PrivateQuizzes
     deviceId={getDeviceId()}
     onBack={() => setShowQuizzes(false)}
@@ -264,6 +278,25 @@ export default function PrivateStudentsPage() {
               </p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
+  <div className="text-4xl">📋</div>
+
+  <h3 className="mt-4 text-xl font-bold text-yellow-400">
+    الاختبارات الأسبوعية
+  </h3>
+
+  <p className="mt-2 text-sm leading-6 text-zinc-400">
+    اختبارات ورقية أسبوعية، حل الأسئلة ثم ارفع صور الحل ليتم تصحيحها من الأستاذ.
+  </p>
+
+  <button
+    type="button"
+    onClick={() => setShowWeeklyExams(true)}
+    className="mt-5 w-full rounded-xl bg-yellow-400 px-4 py-3 font-bold text-black"
+  >
+    دخول الاختبارات الأسبوعية
+  </button>
+</div>
                 <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
                   <div className="text-4xl">🎥</div>
 

@@ -5,7 +5,7 @@ import PrivateQuizzes from '@/components/private-quizzes'
 import PrivateWeeklyExams from '@/components/private-weekly-exams'
 import PrivateLeaderboard from '@/components/private-leaderboard'
 import PrivateMinisterialReviews from '@/components/private-ministerial-reviews'
-
+import PrivateBasicLessons from '@/components/private-basic-lessons'
 type Student = {
   id: number
   name: string
@@ -27,6 +27,7 @@ type Section =
   | 'weekly-exams'
   | 'leaderboard'
   | 'ministerial-reviews'
+  | 'basic-lessons'
 
 function getDeviceId() {
   const storageKey = 'private_student_device_id'
@@ -410,6 +411,26 @@ export default function PrivateStudentsPage() {
                     شرح مختصر للأسئلة الوزارية حسب الفصل والموضوع
                   </p>
                 </button>
+                {/* شرح الأساسيات */}
+<button
+  type="button"
+  onClick={() =>
+    setActiveSection('basic-lessons')
+  }
+  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+>
+  <div className="text-5xl transition group-hover:scale-110">
+    📐
+  </div>
+
+  <h3 className="mt-4 text-lg font-bold text-yellow-400">
+    شرح الأساسيات
+  </h3>
+
+  <p className="mt-2 text-xs leading-5 text-zinc-500">
+    مراجعة وشرح أساسيات الرياضيات المهمة
+  </p>
+</button>
               </div>
 
               {lecturesError && (
@@ -588,6 +609,20 @@ export default function PrivateStudentsPage() {
               <PrivateMinisterialReviews />
             </section>
           )}
+          {/* شرح الأساسيات */}
+{activeSection === 'basic-lessons' && (
+  <section className="mt-6">
+    <button
+      type="button"
+      onClick={goHome}
+      className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+    >
+      ← رجوع للوحة الطالب
+    </button>
+
+    <PrivateBasicLessons />
+  </section>
+)}
         </div>
       </main>
     )

@@ -5,6 +5,7 @@ import AdminQuizzes from '@/components/admin-quizzes'
 import AdminStudyPlan from '@/components/admin-study-plan'
 import AdminWeeklyExams from '@/components/admin-weekly-exams'
 import AdminMinisterialReviews from '@/components/admin-ministerial-reviews'
+import AdminBasicLessons from '@/components/admin-basic-lessons'
 type Student = {
   id: number
   name: string
@@ -918,6 +919,7 @@ export default function AdminPage() {
 <AdminStudyPlan />
 <AdminWeeklyExams />
 <AdminMinisterialReviews />
+<AdminBasicLessons />
         <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <h2 className="text-2xl font-bold">
             إضافة طالب جديد

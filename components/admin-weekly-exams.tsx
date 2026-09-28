@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
+import AdminWeeklyGrading from './admin-weekly-grading'
 type WeeklyExam = {
   id: number
   title: string
@@ -29,7 +29,8 @@ export default function AdminWeeklyExams() {
 
   const [selectedExam, setSelectedExam] =
     useState<WeeklyExam | null>(null)
-
+const [gradingExamId, setGradingExamId] =
+  useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [questionLoading, setQuestionLoading] =
@@ -606,7 +607,16 @@ export default function AdminWeeklyExams() {
                         ? 'إخفاء'
                         : 'تفعيل'}
                     </button>
-
+<button
+  type="button"
+  onClick={() => {
+    setGradingExamId(exam.id)
+    setSelectedExam(null)
+  }}
+  className="rounded-lg border border-green-500/40 px-3 py-2 text-sm font-bold text-green-400"
+>
+  تصحيح التسليمات
+</button>
                     <button
                       type="button"
                       onClick={() =>
@@ -805,6 +815,12 @@ export default function AdminWeeklyExams() {
           </div>
         </div>
       )}
+      {gradingExamId !== null && (
+  <AdminWeeklyGrading
+    examId={gradingExamId}
+    onBack={() => setGradingExamId(null)}
+  />
+)}
     </section>
   )
 }

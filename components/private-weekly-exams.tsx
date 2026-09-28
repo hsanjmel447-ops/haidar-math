@@ -72,14 +72,14 @@ function getDeviceId() {
   if (typeof window === 'undefined') return ''
 
   let deviceId =
-    localStorage.getItem('private_device_id')
+    localStorage.getItem('private_student_device_id')
 
   if (!deviceId) {
     deviceId = crypto.randomUUID()
-    localStorage.setItem(
-      'private_device_id',
-      deviceId
-    )
+   localStorage.setItem(
+  'private_student_device_id',
+  deviceId
+)
   }
 
   return deviceId

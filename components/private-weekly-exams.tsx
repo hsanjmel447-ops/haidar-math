@@ -556,25 +556,6 @@ export default function PrivateWeeklyExams() {
       </div>
     </div>
   )}
-                  0 && (
-                  <div
-                    style={{
-                      marginTop: 16,
-                      padding: 12,
-                      borderRadius: 12,
-                      background:
-                        'rgba(34,197,94,.08)',
-                    }}
-                  >
-                    تم رفع{' '}
-                    {
-                      question.answer.files
-                        .length
-                    }{' '}
-                    صورة للحل ✅
-                  </div>
-                )}
-
               {!locked && (
                 <label
                   style={{

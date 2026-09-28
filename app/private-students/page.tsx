@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import PrivateQuizzes from '@/components/private-quizzes'
 import PrivateWeeklyExams from '@/components/private-weekly-exams'
 import PrivateLeaderboard from '@/components/private-leaderboard'
+import PrivateMinisterialReviews from '@/components/private-ministerial-reviews'
 
 type Student = {
   id: number
@@ -25,6 +26,7 @@ type Section =
   | 'quizzes'
   | 'weekly-exams'
   | 'leaderboard'
+  | 'ministerial-reviews'
 
 function getDeviceId() {
   const storageKey = 'private_student_device_id'
@@ -386,13 +388,17 @@ export default function PrivateStudentsPage() {
                   </p>
                 </button>
 
-                {/* الوزاريات - قريباً */}
-                <div className="relative flex min-h-[180px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center">
-                  <div className="absolute left-3 top-3 rounded-full bg-yellow-400 px-3 py-1 text-[10px] font-black text-black">
-                    قريباً
-                  </div>
-
-                  <div className="text-5xl">
+                {/* مراجعة الأسئلة الوزارية */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection(
+                      'ministerial-reviews'
+                    )
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
                     📚
                   </div>
 
@@ -403,7 +409,7 @@ export default function PrivateStudentsPage() {
                   <p className="mt-2 text-xs leading-5 text-zinc-500">
                     شرح مختصر للأسئلة الوزارية حسب الفصل والموضوع
                   </p>
-                </div>
+                </button>
               </div>
 
               {lecturesError && (
@@ -566,7 +572,8 @@ export default function PrivateStudentsPage() {
               <PrivateLeaderboard />
             </section>
           )}
-                    {/* مراجعة الأسئلة الوزارية */}
+
+          {/* مراجعة الأسئلة الوزارية */}
           {activeSection ===
             'ministerial-reviews' && (
             <section className="mt-6">

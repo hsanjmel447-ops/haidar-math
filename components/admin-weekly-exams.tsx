@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import AdminWeeklyGrading from './admin-weekly-grading'
+
 type WeeklyExam = {
   id: number
   title: string
@@ -29,12 +30,20 @@ export default function AdminWeeklyExams() {
 
   const [selectedExam, setSelectedExam] =
     useState<WeeklyExam | null>(null)
-const [gradingExamId, setGradingExamId] =
-  useState<number | null>(null)
+
+  const [gradingExamId, setGradingExamId] =
+    useState<number | null>(null)
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
   const [questionLoading, setQuestionLoading] =
     useState(false)
+
+  const [
+    uploadingQuestionImage,
+    setUploadingQuestionImage,
+  ] = useState(false)
 
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -43,16 +52,21 @@ const [gradingExamId, setGradingExamId] =
   const [weekNumber, setWeekNumber] = useState('1')
   const [description, setDescription] = useState('')
   const [totalScore, setTotalScore] = useState('100')
+
   const [pointsAvailable, setPointsAvailable] =
     useState('100')
+
   const [startsAt, setStartsAt] = useState('')
   const [deadlineAt, setDeadlineAt] = useState('')
 
   const [questionText, setQuestionText] = useState('')
+
   const [questionImageUrl, setQuestionImageUrl] =
     useState('')
+
   const [questionScore, setQuestionScore] =
     useState('10')
+
   const [questionOrder, setQuestionOrder] =
     useState('1')
 
@@ -139,6 +153,7 @@ const [gradingExamId, setGradingExamId] =
       setDeadlineAt('')
 
       setMessage('تم إنشاء الاختبار الأسبوعي')
+
       await loadExams()
     } catch {
       setError('تعذر الاتصال بالخادم')
@@ -229,7 +244,9 @@ const [gradingExamId, setGradingExamId] =
       }
 
       setExams((current) =>
-        current.filter((item) => item.id !== exam.id)
+        current.filter(
+          (item) => item.id !== exam.id
+        )
       )
 
       if (selectedExam?.id === exam.id) {
@@ -243,7 +260,9 @@ const [gradingExamId, setGradingExamId] =
     }
   }
 
-  const openQuestions = async (exam: WeeklyExam) => {
+  const openQuestions = async (
+    exam: WeeklyExam
+  ) => {
     setSelectedExam(exam)
     setQuestions([])
     setQuestionLoading(true)
@@ -275,6 +294,52 @@ const [gradingExamId, setGradingExamId] =
     }
   }
 
+  const uploadQuestionImage = async (
+    file: File | null
+  ) => {
+    if (!file) return
+
+    setUploadingQuestionImage(true)
+    setError('')
+    setMessage('')
+
+    try {
+      const formData = new FormData()
+
+      formData.append('file', file)
+
+      const response = await fetch(
+        '/api/admin-weekly-exam-question-upload',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(
+          data.error ||
+            'تعذر رفع صورة السؤال'
+        )
+        return
+      }
+
+      setQuestionImageUrl(data.imageUrl)
+
+      setMessage(
+        'تم رفع صورة السؤال بنجاح ✅'
+      )
+    } catch {
+      setError(
+        'تعذر الاتصال بالخادم أثناء رفع الصورة'
+      )
+    } finally {
+      setUploadingQuestionImage(false)
+    }
+  }
+
   const addQuestion = async () => {
     if (!selectedExam) return
 
@@ -282,7 +347,16 @@ const [gradingExamId, setGradingExamId] =
       !questionText.trim() &&
       !questionImageUrl.trim()
     ) {
-      setError('اكتب السؤال أو أضف رابط صورة السؤال')
+      setError(
+        'اكتب السؤال أو ارفع صورة للسؤال'
+      )
+      return
+    }
+
+    if (uploadingQuestionImage) {
+      setError(
+        'انتظر حتى يكتمل رفع الصورة'
+      )
       return
     }
 
@@ -325,7 +399,8 @@ const [gradingExamId, setGradingExamId] =
         String(Number(current || 0) + 1)
       )
 
-      setMessage('تمت إضافة السؤال')
+      setMessage('تمت إضافة السؤال ✅')
+
       await openQuestions(selectedExam)
     } catch {
       setError('تعذر الاتصال بالخادم')
@@ -411,7 +486,9 @@ const [gradingExamId, setGradingExamId] =
 
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) =>
+              setTitle(e.target.value)
+            }
             placeholder="مثلاً: اختبار الأسبوع الأول"
             className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-yellow-400"
           />
@@ -607,16 +684,18 @@ const [gradingExamId, setGradingExamId] =
                         ? 'إخفاء'
                         : 'تفعيل'}
                     </button>
-<button
-  type="button"
-  onClick={() => {
-    setGradingExamId(exam.id)
-    setSelectedExam(null)
-  }}
-  className="rounded-lg border border-green-500/40 px-3 py-2 text-sm font-bold text-green-400"
->
-  تصحيح التسليمات
-</button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGradingExamId(exam.id)
+                        setSelectedExam(null)
+                      }}
+                      className="rounded-lg border border-green-500/40 px-3 py-2 text-sm font-bold text-green-400"
+                    >
+                      تصحيح التسليمات
+                    </button>
+
                     <button
                       type="button"
                       onClick={() =>
@@ -658,6 +737,8 @@ const [gradingExamId, setGradingExamId] =
               onClick={() => {
                 setSelectedExam(null)
                 setQuestions([])
+                setQuestionText('')
+                setQuestionImageUrl('')
               }}
               className="rounded-lg border border-zinc-700 px-3 py-2 text-sm"
             >
@@ -668,7 +749,7 @@ const [gradingExamId, setGradingExamId] =
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="text-sm text-zinc-400">
-                نص السؤال
+                نص السؤال — اختياري إذا عندك صورة
               </label>
 
               <textarea
@@ -677,14 +758,70 @@ const [gradingExamId, setGradingExamId] =
                 onChange={(e) =>
                   setQuestionText(e.target.value)
                 }
-                placeholder="اكتب السؤال هنا، أو استخدم صورة السؤال"
+                placeholder="اكتب السؤال هنا، أو ارفع صورة السؤال"
                 className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-sm text-zinc-400">
-                رابط صورة السؤال — اختياري
+              <label className="text-sm font-bold text-zinc-300">
+                📷 صورة السؤال — اختياري
+              </label>
+
+              <div className="mt-2 rounded-xl border border-dashed border-yellow-400/40 bg-zinc-950 p-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    uploadQuestionImage(
+                      e.target.files?.[0] ?? null
+                    )
+                  }
+                  disabled={uploadingQuestionImage}
+                  className="block w-full text-sm text-zinc-300 file:ml-3 file:rounded-lg file:border-0 file:bg-yellow-400 file:px-4 file:py-2 file:font-bold file:text-black"
+                />
+
+                <p className="mt-3 text-xs text-zinc-500">
+                  اختر صورة من الاستديو أو الكاميرا.
+                  الحد الأقصى 10MB.
+                </p>
+
+                {uploadingQuestionImage && (
+                  <div className="mt-4 rounded-lg border border-yellow-400/20 bg-yellow-400/5 p-3 text-sm font-bold text-yellow-400">
+                    جاري رفع صورة السؤال...
+                  </div>
+                )}
+
+                {questionImageUrl &&
+                  !uploadingQuestionImage && (
+                    <div className="mt-4">
+                      <p className="mb-2 text-sm font-bold text-green-400">
+                        ✅ تم رفع الصورة
+                      </p>
+
+                      <img
+                        src={questionImageUrl}
+                        alt="معاينة صورة السؤال"
+                        className="max-h-96 w-full rounded-xl border border-zinc-700 bg-black object-contain"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setQuestionImageUrl('')
+                        }
+                        className="mt-3 rounded-lg border border-red-500/40 px-3 py-2 text-sm font-bold text-red-400"
+                      >
+                        إزالة الصورة
+                      </button>
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="text-sm text-zinc-500">
+                رابط صورة خارجي — اختياري
               </label>
 
               <input
@@ -694,8 +831,8 @@ const [gradingExamId, setGradingExamId] =
                     e.target.value
                   )
                 }
-                placeholder="https://..."
-                className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
+                placeholder="يمكنك أيضاً لصق رابط صورة مباشر"
+                className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-yellow-400"
               />
             </div>
 
@@ -739,10 +876,16 @@ const [gradingExamId, setGradingExamId] =
           <button
             type="button"
             onClick={addQuestion}
-            disabled={saving}
+            disabled={
+              saving || uploadingQuestionImage
+            }
             className="mt-4 w-full rounded-xl bg-yellow-400 px-4 py-3 font-bold text-black disabled:opacity-50"
           >
-            إضافة السؤال
+            {uploadingQuestionImage
+              ? 'انتظر رفع الصورة...'
+              : saving
+                ? 'جاري إضافة السؤال...'
+                : 'إضافة السؤال'}
           </button>
 
           <div className="mt-6">
@@ -815,12 +958,15 @@ const [gradingExamId, setGradingExamId] =
           </div>
         </div>
       )}
+
       {gradingExamId !== null && (
-  <AdminWeeklyGrading
-    examId={gradingExamId}
-    onBack={() => setGradingExamId(null)}
-  />
-)}
+        <AdminWeeklyGrading
+          examId={gradingExamId}
+          onBack={() =>
+            setGradingExamId(null)
+          }
+        />
+      )}
     </section>
   )
 }

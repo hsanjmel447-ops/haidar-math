@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import PrivateQuizzes from '@/components/private-quizzes'
 import PrivateWeeklyExams from '@/components/private-weekly-exams'
 import PrivateLeaderboard from '@/components/private-leaderboard'
+
 type Student = {
   id: number
   name: string
@@ -17,6 +18,13 @@ type Lecture = {
   video_url: string
   sort_order: number
 }
+
+type Section =
+  | 'home'
+  | 'lectures'
+  | 'quizzes'
+  | 'weekly-exams'
+  | 'leaderboard'
 
 function getDeviceId() {
   const storageKey = 'private_student_device_id'
@@ -39,11 +47,12 @@ export default function PrivateStudentsPage() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  const [showLectures, setShowLectures] = useState(false)
+  const [activeSection, setActiveSection] =
+    useState<Section>('home')
+
   const [lectures, setLectures] = useState<Lecture[]>([])
-  const [showQuizzes, setShowQuizzes] = useState(false)
-  const [showWeeklyExams, setShowWeeklyExams] = useState(false)
-  const [lecturesLoading, setLecturesLoading] = useState(false)
+  const [lecturesLoading, setLecturesLoading] =
+    useState(false)
   const [lecturesError, setLecturesError] = useState('')
 
   useEffect(() => {
@@ -61,7 +70,11 @@ export default function PrivateStudentsPage() {
 
         const data = await response.json()
 
-        if (response.ok && data.success && data.student) {
+        if (
+          response.ok &&
+          data.success &&
+          data.student
+        ) {
           setStudent(data.student)
         }
       } catch {
@@ -110,6 +123,7 @@ export default function PrivateStudentsPage() {
 
       setStudent(data.student)
       setCode('')
+      setActiveSection('home')
     } catch {
       setError('تعذر الاتصال، حاول مرة أخرى')
     } finally {
@@ -134,7 +148,10 @@ export default function PrivateStudentsPage() {
 
       const data = await response.json()
 
-      if (response.status === 401 || response.status === 403) {
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
         setLecturesError(
           data.error || 'تعذر التحقق من الاشتراك'
         )
@@ -149,7 +166,7 @@ export default function PrivateStudentsPage() {
       }
 
       setLectures(data.lectures ?? [])
-      setShowLectures(true)
+      setActiveSection('lectures')
     } catch {
       setLecturesError(
         'تعذر الاتصال، حاول مرة أخرى'
@@ -173,17 +190,25 @@ export default function PrivateStudentsPage() {
       setCode('')
       setError('')
       setLectures([])
-      setShowLectures(false)
       setLecturesError('')
+      setActiveSection('home')
       setLoggingOut(false)
     }
+  }
+
+  const goHome = () => {
+    setActiveSection('home')
+    setLecturesError('')
   }
 
   const groupedLectures = lectures.reduce<
     Record<string, Record<string, Lecture[]>>
   >((groups, lecture) => {
-    const chapter = lecture.chapter || 'بدون فصل'
-    const topic = lecture.topic || 'بدون موضوع'
+    const chapter =
+      lecture.chapter || 'بدون فصل'
+
+    const topic =
+      lecture.topic || 'بدون موضوع'
 
     if (!groups[chapter]) {
       groups[chapter] = {}
@@ -222,6 +247,8 @@ export default function PrivateStudentsPage() {
         className="min-h-screen bg-black px-4 py-8 text-white"
       >
         <div className="mx-auto max-w-5xl">
+
+          {/* رأس منطقة الطالب */}
           <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
             <p className="text-sm font-bold text-yellow-400">
               منطقة حصرية لطلاب الخاص
@@ -242,7 +269,7 @@ export default function PrivateStudentsPage() {
                 type="button"
                 onClick={logout}
                 disabled={loggingOut}
-                className="rounded-xl border border-zinc-700 px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-zinc-700 px-5 py-3 font-bold transition hover:border-red-500 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loggingOut
                   ? 'جاري تسجيل الخروج...'
@@ -251,143 +278,144 @@ export default function PrivateStudentsPage() {
             </div>
           </div>
 
-          {showWeeklyExams ? (
-  <div>
-    <button
-      type="button"
-      onClick={() => setShowWeeklyExams(false)}
-      className="mt-6 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
-    >
-      رجوع للمحتوى
-    </button>
+          {/* الصفحة الرئيسية */}
+          {activeSection === 'home' && (
+            <section className="mt-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold">
+                  لوحة الطالب
+                </h2>
 
-    <PrivateWeeklyExams />
-    <PrivateLeaderboard />
-  </div>
-) : showQuizzes ? (
-  <PrivateQuizzes
-    deviceId={getDeviceId()}
-    onBack={() => setShowQuizzes(false)}
-  />
-) : !showLectures ? (
-            <section className="mt-6">
-              <h2 className="text-2xl font-bold">
-                محتوى طلاب الخاص
-              </h2>
+                <p className="mt-2 text-zinc-400">
+                  اختر القسم الذي تريد الدخول إليه
+                </p>
+              </div>
 
-              <p className="mt-2 text-zinc-400">
-                اختر القسم الذي تريد الدخول إليه.
-              </p>
+              <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-3">
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
-  <div className="text-4xl">📋</div>
+                {/* المحاضرات */}
+                <button
+                  type="button"
+                  onClick={loadLectures}
+                  disabled={lecturesLoading}
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900 disabled:opacity-50"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    🎥
+                  </div>
 
-  <h3 className="mt-4 text-xl font-bold text-yellow-400">
-    الاختبارات الأسبوعية
-  </h3>
-
-  <p className="mt-2 text-sm leading-6 text-zinc-400">
-    اختبارات ورقية أسبوعية، حل الأسئلة ثم ارفع صور الحل ليتم تصحيحها من الأستاذ.
-  </p>
-
-  <button
-    type="button"
-    onClick={() => setShowWeeklyExams(true)}
-    className="mt-5 w-full rounded-xl bg-yellow-400 px-4 py-3 font-bold text-black"
-  >
-    دخول الاختبارات الأسبوعية
-  </button>
-</div>
-                <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-6">
-                  <div className="text-4xl">🎥</div>
-
-                  <h3 className="mt-4 text-xl font-bold text-yellow-400">
+                  <h3 className="mt-4 text-lg font-bold text-yellow-400">
                     المحاضرات الخاصة
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    محاضرات وبثوث الدورة الخاصة مرتبة حسب الفصل والموضوع.
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    محاضرات الدورة مرتبة حسب الفصل والموضوع
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={loadLectures}
-                    disabled={lecturesLoading}
-                    className="mt-5 w-full rounded-xl bg-yellow-400 px-4 py-3 font-bold text-black disabled:opacity-50"
-                  >
-                    {lecturesLoading
-                      ? 'جاري تحميل المحاضرات...'
-                      : 'عرض المحاضرات'}
-                  </button>
-
-                  {lecturesError && (
-                    <p className="mt-3 text-sm text-red-400">
-                      {lecturesError}
+                  {lecturesLoading && (
+                    <p className="mt-3 text-xs text-yellow-400">
+                      جاري التحميل...
                     </p>
                   )}
-                </div>
+                </button>
 
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-                  <div className="text-4xl">📝</div>
+                {/* الاختبارات اليومية */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection('quizzes')
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    📝
+                  </div>
 
-                  <h3 className="mt-4 text-xl font-bold">
-                    الاختبارات
+                  <h3 className="mt-4 text-lg font-bold">
+                    الاختبارات اليومية
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    اختبارات خاصة لمتابعة مستواك وتثبيت المادة.
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    اختبر مستواك وثبّت معلوماتك
                   </p>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowQuizzes(true)}
-                    className="mt-5 w-full rounded-xl border border-zinc-700 px-4 py-3 font-bold"
-                  >
-                    عرض الاختبارات
-                  </button>
-                </div>
+                {/* الاختبارات الأسبوعية */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection(
+                      'weekly-exams'
+                    )
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    📋
+                  </div>
 
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-                  <div className="text-4xl">📚</div>
-
-                  <h3 className="mt-4 text-xl font-bold">
-                    الواجبات
+                  <h3 className="mt-4 text-lg font-bold">
+                    الاختبارات الأسبوعية
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    الواجبات والتمارين المطلوبة من طلاب الخاص.
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    حل على الورق وارفع صور إجابتك
                   </p>
+                </button>
 
-                  <button
-                    type="button"
-                    className="mt-5 w-full rounded-xl border border-zinc-700 px-4 py-3 font-bold"
-                  >
-                    عرض الواجبات
-                  </button>
-                </div>
+                {/* لوحة النخبة */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection(
+                      'leaderboard'
+                    )
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    🏆
+                  </div>
 
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-                  <div className="text-4xl">📄</div>
-
-                  <h3 className="mt-4 text-xl font-bold">
-                    الملفات والملازم
+                  <h3 className="mt-4 text-lg font-bold">
+                    لوحة الطلبة النخبة
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    الملازم والملفات والمواد المساعدة الخاصة بالدورة.
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    شاهد ترتيبك ونقاطك بين الطلاب
                   </p>
+                </button>
 
-                  <button
-                    type="button"
-                    className="mt-5 w-full rounded-xl border border-zinc-700 px-4 py-3 font-bold"
-                  >
-                    عرض الملفات
-                  </button>
+                {/* الوزاريات - قريباً */}
+                <div className="relative flex min-h-[180px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center">
+                  <div className="absolute left-3 top-3 rounded-full bg-yellow-400 px-3 py-1 text-[10px] font-black text-black">
+                    قريباً
+                  </div>
+
+                  <div className="text-5xl">
+                    📚
+                  </div>
+
+                  <h3 className="mt-4 text-lg font-bold text-yellow-400">
+                    مراجعة الأسئلة الوزارية
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    شرح مختصر للأسئلة الوزارية حسب الفصل والموضوع
+                  </p>
                 </div>
               </div>
+
+              {lecturesError && (
+                <p className="mt-5 text-center text-sm text-red-400">
+                  {lecturesError}
+                </p>
+              )}
             </section>
-          ) : (
+          )}
+
+          {/* المحاضرات الخاصة */}
+          {activeSection === 'lectures' && (
             <section className="mt-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -406,13 +434,10 @@ export default function PrivateStudentsPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowLectures(false)
-                    setLecturesError('')
-                  }}
+                  onClick={goHome}
                   className="rounded-xl border border-zinc-700 px-5 py-3 font-bold"
                 >
-                  رجوع للمحتوى
+                  ← رجوع للوحة الطالب
                 </button>
               </div>
 
@@ -424,7 +449,9 @@ export default function PrivateStudentsPage() {
                 </div>
               ) : (
                 <div className="mt-6 space-y-6">
-                  {Object.entries(groupedLectures).map(
+                  {Object.entries(
+                    groupedLectures
+                  ).map(
                     ([chapter, topics]) => (
                       <div
                         key={chapter}
@@ -435,8 +462,13 @@ export default function PrivateStudentsPage() {
                         </h3>
 
                         <div className="mt-5 space-y-5">
-                          {Object.entries(topics).map(
-                            ([topic, topicLectures]) => (
+                          {Object.entries(
+                            topics
+                          ).map(
+                            ([
+                              topic,
+                              topicLectures,
+                            ]) => (
                               <div
                                 key={topic}
                                 className="rounded-xl border border-zinc-800 bg-black p-4"
@@ -449,17 +481,23 @@ export default function PrivateStudentsPage() {
                                   {topicLectures.map(
                                     (lecture) => (
                                       <div
-                                        key={lecture.id}
+                                        key={
+                                          lecture.id
+                                        }
                                         className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:flex-row sm:items-center sm:justify-between"
                                       >
                                         <div>
                                           <p className="font-bold">
-                                            {lecture.title}
+                                            {
+                                              lecture.title
+                                            }
                                           </p>
 
                                           <p className="mt-1 text-xs text-zinc-500">
                                             الدرس رقم{' '}
-                                            {lecture.sort_order}
+                                            {
+                                              lecture.sort_order
+                                            }
                                           </p>
                                         </div>
 
@@ -488,11 +526,52 @@ export default function PrivateStudentsPage() {
               )}
             </section>
           )}
+
+          {/* الاختبارات اليومية */}
+          {activeSection === 'quizzes' && (
+            <PrivateQuizzes
+              deviceId={getDeviceId()}
+              onBack={goHome}
+            />
+          )}
+
+          {/* الاختبارات الأسبوعية */}
+          {activeSection ===
+            'weekly-exams' && (
+            <section className="mt-6">
+              <button
+                type="button"
+                onClick={goHome}
+                className="mb-2 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              >
+                ← رجوع للوحة الطالب
+              </button>
+
+              <PrivateWeeklyExams />
+            </section>
+          )}
+
+          {/* لوحة النخبة */}
+          {activeSection ===
+            'leaderboard' && (
+            <section className="mt-6">
+              <button
+                type="button"
+                onClick={goHome}
+                className="mb-2 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              >
+                ← رجوع للوحة الطالب
+              </button>
+
+              <PrivateLeaderboard />
+            </section>
+          )}
         </div>
       </main>
     )
   }
 
+  /* شاشة تسجيل الدخول */
   return (
     <main
       dir="rtl"
@@ -500,7 +579,9 @@ export default function PrivateStudentsPage() {
     >
       <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
         <div className="text-center">
-          <div className="text-4xl">🔒</div>
+          <div className="text-4xl">
+            🔒
+          </div>
 
           <h1 className="mt-4 text-3xl font-bold">
             طلاب الخاص
@@ -515,7 +596,9 @@ export default function PrivateStudentsPage() {
           type="text"
           inputMode="numeric"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) =>
+            setCode(e.target.value)
+          }
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               enterPrivateArea()

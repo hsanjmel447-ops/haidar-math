@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import AdminQuizzes from '@/components/admin-quizzes'
 import AdminStudyPlan from '@/components/admin-study-plan'
 import AdminWeeklyExams from '@/components/admin-weekly-exams'
+import AdminMinisterialReviews from '@/components/admin-ministerial-reviews'
 type Student = {
   id: number
   name: string
@@ -916,6 +917,7 @@ export default function AdminPage() {
 <AdminQuizzes />
 <AdminStudyPlan />
 <AdminWeeklyExams />
+<AdminMinisterialReviews />
         <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <h2 className="text-2xl font-bold">
             إضافة طالب جديد

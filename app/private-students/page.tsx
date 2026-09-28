@@ -566,6 +566,21 @@ export default function PrivateStudentsPage() {
               <PrivateLeaderboard />
             </section>
           )}
+                    {/* مراجعة الأسئلة الوزارية */}
+          {activeSection ===
+            'ministerial-reviews' && (
+            <section className="mt-6">
+              <button
+                type="button"
+                onClick={goHome}
+                className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              >
+                ← رجوع للوحة الطالب
+              </button>
+
+              <PrivateMinisterialReviews />
+            </section>
+          )}
         </div>
       </main>
     )

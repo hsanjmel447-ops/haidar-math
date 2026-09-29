@@ -28,7 +28,242 @@ type Section =
   | 'leaderboard'
   | 'ministerial-reviews'
   | 'basic-lessons'
+type DailyMessage = {
+  type: 'ayah' | 'motivation'
+  text: string
+  source?: string
+}
 
+const dailyMessages: DailyMessage[] = [
+  // آيات الأمل والثبات والتوكل
+  {
+    type: 'ayah',
+    text: '﴿إِن يَنصُرْكُمُ اللَّهُ فَلَا غَالِبَ لَكُمْ﴾',
+    source: 'آل عمران: 160',
+  },
+  {
+    type: 'ayah',
+    text: '﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
+    source: 'الشرح: 5',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
+    source: 'الشرح: 6',
+  },
+  {
+    type: 'ayah',
+    text: '﴿سَيَجْعَلُ اللَّهُ بَعْدَ عُسْرٍ يُسْرًا﴾',
+    source: 'الطلاق: 7',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ﴾',
+    source: 'الطلاق: 3',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا﴾',
+    source: 'الطلاق: 2',
+  },
+  {
+    type: 'ayah',
+    text: '﴿أَلَيْسَ اللَّهُ بِكَافٍ عَبْدَهُ﴾',
+    source: 'الزمر: 36',
+  },
+  {
+    type: 'ayah',
+    text: '﴿أَلَا إِنَّ نَصْرَ اللَّهِ قَرِيبٌ﴾',
+    source: 'البقرة: 214',
+  },
+  {
+    type: 'ayah',
+    text: '﴿لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا﴾',
+    source: 'البقرة: 286',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ اللَّهَ مَعَ الصَّابِرِينَ﴾',
+    source: 'البقرة: 153',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَقُل رَّبِّ زِدْنِي عِلْمًا﴾',
+    source: 'طه: 114',
+  },
+  {
+    type: 'ayah',
+    text: '﴿حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ﴾',
+    source: 'آل عمران: 173',
+  },
+  {
+    type: 'ayah',
+    text: '﴿لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا﴾',
+    source: 'التوبة: 40',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ مَعِيَ رَبِّي سَيَهْدِينِ﴾',
+    source: 'الشعراء: 62',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ رَبِّي قَرِيبٌ مُّجِيبٌ﴾',
+    source: 'هود: 61',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    source: 'التوبة: 120',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَرَحْمَتِي وَسِعَتْ كُلَّ شَيْءٍ﴾',
+    source: 'الأعراف: 156',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَمَا النَّصْرُ إِلَّا مِنْ عِندِ اللَّهِ﴾',
+    source: 'آل عمران: 126',
+  },
+  {
+    type: 'ayah',
+    text: '﴿لَا تَدْرِي لَعَلَّ اللَّهَ يُحْدِثُ بَعْدَ ذَٰلِكَ أَمْرًا﴾',
+    source: 'الطلاق: 1',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَاصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    source: 'هود: 115',
+  },
+  {
+    type: 'ayah',
+    text: '﴿فَاللَّهُ خَيْرٌ حَافِظًا وَهُوَ أَرْحَمُ الرَّاحِمِينَ﴾',
+    source: 'يوسف: 64',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّهُ مَن يَتَّقِ وَيَصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    source: 'يوسف: 90',
+  },
+  {
+    type: 'ayah',
+    text: '﴿رَبِّ اشْرَحْ لِي صَدْرِي ۝ وَيَسِّرْ لِي أَمْرِي﴾',
+    source: 'طه: 25-26',
+  },
+  {
+    type: 'ayah',
+    text: '﴿إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ﴾',
+    source: 'آل عمران: 159',
+  },
+  {
+    type: 'ayah',
+    text: '﴿وَلَا تَهِنُوا وَلَا تَحْزَنُوا﴾',
+    source: 'آل عمران: 139',
+  },
+
+  // رسائل تحفيزية للطالب
+  {
+    type: 'motivation',
+    text: 'لا تجعل صعوبة البداية تقنعك باستحالة النهاية.',
+  },
+  {
+    type: 'motivation',
+    text: 'كل سؤال تتعب عليه اليوم، قد يكون درجة تنقذك غدًا.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تحتاج أن تكون الأفضل اليوم؛ تحتاج أن تكون أفضل من الأمس.',
+  },
+  {
+    type: 'motivation',
+    text: 'حين يتوقف الآخرون بسبب التعب، يبدأ الفرق الذي يصنعه الاستمرار.',
+  },
+  {
+    type: 'motivation',
+    text: 'الامتحان لا يعرف كم كنت خائفًا؛ يعرف فقط مقدار استعدادك.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تحكم على مستقبلك من يوم دراسي سيئ.',
+  },
+  {
+    type: 'motivation',
+    text: 'ساعة تركيز حقيقية أقوى من ساعات طويلة من التأجيل.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تخف من كثرة ما بقي؛ ابدأ بما أمامك.',
+  },
+  {
+    type: 'motivation',
+    text: 'أصعب مسألة اليوم قد تصبح أسهل سؤال في الامتحان بسبب تدريبك.',
+  },
+  {
+    type: 'motivation',
+    text: 'كل مرة تعود فيها للدراسة بعد التعب، أنت تبني انضباطك.',
+  },
+  {
+    type: 'motivation',
+    text: 'هدفك لا يحتاج حماسًا كل يوم؛ يحتاج منك ألّا تتوقف.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تنتظر الثقة حتى تبدأ؛ ابدأ حتى تأتيك الثقة.',
+  },
+  {
+    type: 'motivation',
+    text: 'الدرجة العالية ليست لحظة حظ؛ إنها تراكم أيام لم تستسلم فيها.',
+  },
+  {
+    type: 'motivation',
+    text: 'حتى لو تأخرت، ما دام أمامك وقت فهناك شيء تستطيع تغييره.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تجعل خطأً في سؤال يهزمك؛ افهمه حتى لا يتكرر.',
+  },
+  {
+    type: 'motivation',
+    text: 'ركز على الصفحة التي أمامك، لا على حجم الكتاب كله.',
+  },
+  {
+    type: 'motivation',
+    text: 'منافسك الحقيقي هو مستواك بالأمس.',
+  },
+  {
+    type: 'motivation',
+    text: 'ما تتقنه اليوم تحت التدريب، ستواجهه غدًا بثبات.',
+  },
+  {
+    type: 'motivation',
+    text: 'قد لا ترى نتيجة تعبك الآن، لكن كل فهم جديد يتراكم.',
+  },
+  {
+    type: 'motivation',
+    text: 'ابدأ ولو بعشر دقائق؛ البداية تكسر ثقل التأجيل.',
+  },
+  {
+    type: 'motivation',
+    text: 'إذا تعبت، خفف السرعة ولا تترك الطريق.',
+  },
+  {
+    type: 'motivation',
+    text: 'لا تقل فاتني الكثير؛ اسأل ماذا أستطيع إنجازه من الآن.',
+  },
+  {
+    type: 'motivation',
+    text: 'ورقة الامتحان تصبح أقل رهبة كلما واجهت أسئلة أكثر قبلها.',
+  },
+  {
+    type: 'motivation',
+    text: 'نجاحك لا يحتاج يومًا مثاليًا؛ يحتاج أيامًا عادية تستمر فيها.',
+  },
+  {
+    type: 'motivation',
+    text: 'ستأتي لحظة تنظر فيها إلى هذا التعب وتعرف أنه كان يستحق.',
+  },
+]
 function getDeviceId() {
   const storageKey = 'private_student_device_id'
 
@@ -45,6 +280,21 @@ function getDeviceId() {
 export default function PrivateStudentsPage() {
   const [code, setCode] = useState('')
   const [student, setStudent] = useState<Student | null>(null)
+  const getDailyMessage = () => {
+  if (!student) return null
+
+  const now = new Date()
+  const dayKey = Math.floor(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000
+  )
+
+  const index =
+    Math.abs(student.id * 31 + dayKey) % dailyMessages.length
+
+  return dailyMessages[index]
+}
+
+const dailyMessage = getDailyMessage()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -284,6 +534,27 @@ export default function PrivateStudentsPage() {
           {/* الصفحة الرئيسية */}
           {activeSection === 'home' && (
             <section className="mt-8">
+            {dailyMessage && (
+  <div className="mb-6 rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center">
+    <p className="text-sm font-bold text-yellow-400">
+      {dailyMessage.type === 'ayah' ? '🌿 آية اليوم' : '✨ رسالة اليوم'}
+    </p>
+
+    <p
+      className={`mt-3 font-bold leading-8 text-white ${
+        dailyMessage.type === 'ayah' ? 'text-xl' : 'text-lg'
+      }`}
+    >
+      {dailyMessage.text}
+    </p>
+
+    {dailyMessage.source && (
+      <p className="mt-3 text-sm text-zinc-400">
+        {dailyMessage.source}
+      </p>
+    )}
+  </div>
+)}
               <div className="text-center">
                 <h2 className="text-2xl font-bold">
                   لوحة الطالب

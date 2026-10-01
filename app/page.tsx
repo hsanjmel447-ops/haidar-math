@@ -12,7 +12,7 @@ import { StudentResults } from '@/components/student-results'
 import { About } from '@/components/about'
 import { Contact } from '@/components/contact'
 import { SiteFooter } from '@/components/site-footer'
-
+import { InstallAndTelegram } from '@/components/install-and-telegram'
 export default function Page() {
   return (
     <div className="min-h-screen">
@@ -20,6 +20,7 @@ export default function Page() {
 
       <main>
         <Hero />
+        <InstallAndTelegram />
         <Courses />
         <LatestLectures />
         <MinistryQuestions />

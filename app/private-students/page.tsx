@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -6,6 +7,7 @@ import PrivateWeeklyExams from '@/components/private-weekly-exams'
 import PrivateLeaderboard from '@/components/private-leaderboard'
 import PrivateMinisterialReviews from '@/components/private-ministerial-reviews'
 import PrivateBasicLessons from '@/components/private-basic-lessons'
+
 type Student = {
   id: number
   name: string
@@ -25,9 +27,11 @@ type Section =
   | 'lectures'
   | 'quizzes'
   | 'weekly-exams'
+  | 'certificates'
   | 'leaderboard'
   | 'ministerial-reviews'
   | 'basic-lessons'
+
 type DailyMessage = {
   type: 'ayah' | 'motivation'
   text: string
@@ -35,125 +39,124 @@ type DailyMessage = {
 }
 
 const dailyMessages: DailyMessage[] = [
-  // آيات الأمل والثبات والتوكل
   {
     type: 'ayah',
-    text: '﴿إِن يَنصُرْكُمُ اللَّهُ فَلَا غَالِبَ لَكُمْ﴾',
+    text: '﴿إِن يَنصُرْكُمُ اللَّهُ فَلَا غَالِبَ لَكُمْ﴾',
     source: 'آل عمران: 160',
   },
   {
     type: 'ayah',
-    text: '﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
+    text: '﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
     source: 'الشرح: 5',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
+    text: '﴿إِنَّ مَعَ الْعُسْرِ يُسْرًا﴾',
     source: 'الشرح: 6',
   },
   {
     type: 'ayah',
-    text: '﴿سَيَجْعَلُ اللَّهُ بَعْدَ عُسْرٍ يُسْرًا﴾',
+    text: '﴿سَيَجْعَلُ اللَّهُ بَعْدَ عُسْرٍ يُسْرًا﴾',
     source: 'الطلاق: 7',
   },
   {
     type: 'ayah',
-    text: '﴿وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ﴾',
+    text: '﴿وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ﴾',
     source: 'الطلاق: 3',
   },
   {
     type: 'ayah',
-    text: '﴿وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا﴾',
+    text: '﴿وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا﴾',
     source: 'الطلاق: 2',
   },
   {
     type: 'ayah',
-    text: '﴿أَلَيْسَ اللَّهُ بِكَافٍ عَبْدَهُ﴾',
+    text: '﴿أَلَيْسَ اللَّهُ بِكَافٍ عَبْدَهُ﴾',
     source: 'الزمر: 36',
   },
   {
     type: 'ayah',
-    text: '﴿أَلَا إِنَّ نَصْرَ اللَّهِ قَرِيبٌ﴾',
+    text: '﴿أَلَا إِنَّ نَصْرَ اللَّهِ قَرِيبٌ﴾',
     source: 'البقرة: 214',
   },
   {
     type: 'ayah',
-    text: '﴿لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا﴾',
+    text: '﴿لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا﴾',
     source: 'البقرة: 286',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ اللَّهَ مَعَ الصَّابِرِينَ﴾',
+    text: '﴿إِنَّ اللَّهَ مَعَ الصَّابِرِينَ﴾',
     source: 'البقرة: 153',
   },
   {
     type: 'ayah',
-    text: '﴿وَقُل رَّبِّ زِدْنِي عِلْمًا﴾',
+    text: '﴿وَقُل رَّبِّ زِدْنِي عِلْمًا﴾',
     source: 'طه: 114',
   },
   {
     type: 'ayah',
-    text: '﴿حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ﴾',
+    text: '﴿حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ﴾',
     source: 'آل عمران: 173',
   },
   {
     type: 'ayah',
-    text: '﴿لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا﴾',
+    text: '﴿لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا﴾',
     source: 'التوبة: 40',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ مَعِيَ رَبِّي سَيَهْدِينِ﴾',
+    text: '﴿إِنَّ مَعِيَ رَبِّي سَيَهْدِينِ﴾',
     source: 'الشعراء: 62',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ رَبِّي قَرِيبٌ مُّجِيبٌ﴾',
+    text: '﴿إِنَّ رَبِّي قَرِيبٌ مُّجِيبٌ﴾',
     source: 'هود: 61',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    text: '﴿إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
     source: 'التوبة: 120',
   },
   {
     type: 'ayah',
-    text: '﴿وَرَحْمَتِي وَسِعَتْ كُلَّ شَيْءٍ﴾',
+    text: '﴿وَرَحْمَتِي وَسِعَتْ كُلَّ شَيْءٍ﴾',
     source: 'الأعراف: 156',
   },
   {
     type: 'ayah',
-    text: '﴿وَمَا النَّصْرُ إِلَّا مِنْ عِندِ اللَّهِ﴾',
+    text: '﴿وَمَا النَّصْرُ إِلَّا مِنْ عِندِ اللَّهِ﴾',
     source: 'آل عمران: 126',
   },
   {
     type: 'ayah',
-    text: '﴿لَا تَدْرِي لَعَلَّ اللَّهَ يُحْدِثُ بَعْدَ ذَٰلِكَ أَمْرًا﴾',
+    text: '﴿لَا تَدْرِي لَعَلَّ اللَّهَ يُحْدِثُ بَعْدَ ذَٰلِكَ أَمْرًا﴾',
     source: 'الطلاق: 1',
   },
   {
     type: 'ayah',
-    text: '﴿وَاصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    text: '﴿وَاصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
     source: 'هود: 115',
   },
   {
     type: 'ayah',
-    text: '﴿فَاللَّهُ خَيْرٌ حَافِظًا وَهُوَ أَرْحَمُ الرَّاحِمِينَ﴾',
+    text: '﴿فَاللَّهُ خَيْرٌ حَافِظًا وَهُوَ أَرْحَمُ الرَّاحِمِينَ﴾',
     source: 'يوسف: 64',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّهُ مَن يَتَّقِ وَيَصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
+    text: '﴿إِنَّهُ مَن يَتَّقِ وَيَصْبِرْ فَإِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ﴾',
     source: 'يوسف: 90',
   },
   {
     type: 'ayah',
-    text: '﴿رَبِّ اشْرَحْ لِي صَدْرِي ۝ وَيَسِّرْ لِي أَمْرِي﴾',
+    text: '﴿رَبِّ اشْرَحْ لِي صَدْرِي ۝ وَيَسِّرْ لِي أَمْرِي﴾',
     source: 'طه: 25-26',
   },
   {
     type: 'ayah',
-    text: '﴿إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ﴾',
+    text: '﴿إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ﴾',
     source: 'آل عمران: 159',
   },
   {
@@ -161,8 +164,6 @@ const dailyMessages: DailyMessage[] = [
     text: '﴿وَلَا تَهِنُوا وَلَا تَحْزَنُوا﴾',
     source: 'آل عمران: 139',
   },
-
-  // رسائل تحفيزية للطالب
   {
     type: 'motivation',
     text: 'لا تجعل صعوبة البداية تقنعك باستحالة النهاية.',
@@ -264,6 +265,7 @@ const dailyMessages: DailyMessage[] = [
     text: 'ستأتي لحظة تنظر فيها إلى هذا التعب وتعرف أنه كان يستحق.',
   },
 ]
+
 function getDeviceId() {
   const storageKey = 'private_student_device_id'
 
@@ -280,21 +282,7 @@ function getDeviceId() {
 export default function PrivateStudentsPage() {
   const [code, setCode] = useState('')
   const [student, setStudent] = useState<Student | null>(null)
-  const getDailyMessage = () => {
-  if (!student) return null
 
-  const now = new Date()
-  const dayKey = Math.floor(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000
-  )
-
-  const index =
-    Math.abs(student.id * 31 + dayKey) % dailyMessages.length
-
-  return dailyMessages[index]
-}
-
-const dailyMessage = getDailyMessage()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -307,6 +295,28 @@ const dailyMessage = getDailyMessage()
   const [lecturesLoading, setLecturesLoading] =
     useState(false)
   const [lecturesError, setLecturesError] = useState('')
+
+  const getDailyMessage = () => {
+    if (!student) return null
+
+    const now = new Date()
+
+    const dayKey = Math.floor(
+      Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      ) / 86400000
+    )
+
+    const index =
+      Math.abs(student.id * 31 + dayKey) %
+      dailyMessages.length
+
+    return dailyMessages[index]
+  }
+
+  const dailyMessage = getDailyMessage()
 
   useEffect(() => {
     const checkSession = async () => {
@@ -457,11 +467,8 @@ const dailyMessage = getDailyMessage()
   const groupedLectures = lectures.reduce<
     Record<string, Record<string, Lecture[]>>
   >((groups, lecture) => {
-    const chapter =
-      lecture.chapter || 'بدون فصل'
-
-    const topic =
-      lecture.topic || 'بدون موضوع'
+    const chapter = lecture.chapter || 'بدون فصل'
+    const topic = lecture.topic || 'بدون موضوع'
 
     if (!groups[chapter]) {
       groups[chapter] = {}
@@ -534,27 +541,32 @@ const dailyMessage = getDailyMessage()
           {/* الصفحة الرئيسية */}
           {activeSection === 'home' && (
             <section className="mt-8">
-            {dailyMessage && (
-  <div className="mb-6 rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center">
-    <p className="text-sm font-bold text-yellow-400">
-      {dailyMessage.type === 'ayah' ? '🌿 آية اليوم' : '✨ رسالة اليوم'}
-    </p>
+              {dailyMessage && (
+                <div className="mb-6 rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center">
+                  <p className="text-sm font-bold text-yellow-400">
+                    {dailyMessage.type === 'ayah'
+                      ? '🌿 آية اليوم'
+                      : '✨ رسالة اليوم'}
+                  </p>
 
-    <p
-      className={`mt-3 font-bold leading-8 text-white ${
-        dailyMessage.type === 'ayah' ? 'text-xl' : 'text-lg'
-      }`}
-    >
-      {dailyMessage.text}
-    </p>
+                  <p
+                    className={`mt-3 font-bold leading-8 text-white ${
+                      dailyMessage.type === 'ayah'
+                        ? 'text-xl'
+                        : 'text-lg'
+                    }`}
+                  >
+                    {dailyMessage.text}
+                  </p>
 
-    {dailyMessage.source && (
-      <p className="mt-3 text-sm text-zinc-400">
-        {dailyMessage.source}
-      </p>
-    )}
-  </div>
-)}
+                  {dailyMessage.source && (
+                    <p className="mt-3 text-sm text-zinc-400">
+                      {dailyMessage.source}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="text-center">
                 <h2 className="text-2xl font-bold">
                   لوحة الطالب
@@ -596,9 +608,7 @@ const dailyMessage = getDailyMessage()
                 {/* الاختبارات اليومية */}
                 <button
                   type="button"
-                  onClick={() =>
-                    setActiveSection('quizzes')
-                  }
+                  onClick={() => setActiveSection('quizzes')}
                   className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
                 >
                   <div className="text-5xl transition group-hover:scale-110">
@@ -618,9 +628,7 @@ const dailyMessage = getDailyMessage()
                 <button
                   type="button"
                   onClick={() =>
-                    setActiveSection(
-                      'weekly-exams'
-                    )
+                    setActiveSection('weekly-exams')
                   }
                   className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
                 >
@@ -637,13 +645,32 @@ const dailyMessage = getDailyMessage()
                   </p>
                 </button>
 
+                {/* شهاداتي */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection('certificates')
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/40 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    🏅
+                  </div>
+
+                  <h3 className="mt-4 text-lg font-bold text-yellow-400">
+                    شهاداتي
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    شهادات الامتياز والتفوق في الاختبارات الأسبوعية
+                  </p>
+                </button>
+
                 {/* لوحة النخبة */}
                 <button
                   type="button"
                   onClick={() =>
-                    setActiveSection(
-                      'leaderboard'
-                    )
+                    setActiveSection('leaderboard')
                   }
                   className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
                 >
@@ -664,9 +691,7 @@ const dailyMessage = getDailyMessage()
                 <button
                   type="button"
                   onClick={() =>
-                    setActiveSection(
-                      'ministerial-reviews'
-                    )
+                    setActiveSection('ministerial-reviews')
                   }
                   className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
                 >
@@ -682,26 +707,27 @@ const dailyMessage = getDailyMessage()
                     شرح مختصر للأسئلة الوزارية حسب الفصل والموضوع
                   </p>
                 </button>
+
                 {/* شرح الأساسيات */}
-<button
-  type="button"
-  onClick={() =>
-    setActiveSection('basic-lessons')
-  }
-  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
->
-  <div className="text-5xl transition group-hover:scale-110">
-    📐
-  </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSection('basic-lessons')
+                  }
+                  className="group flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-yellow-400/30 bg-zinc-950 p-5 text-center transition hover:border-yellow-400 hover:bg-zinc-900"
+                >
+                  <div className="text-5xl transition group-hover:scale-110">
+                    📐
+                  </div>
 
-  <h3 className="mt-4 text-lg font-bold text-yellow-400">
-    شرح الأساسيات
-  </h3>
+                  <h3 className="mt-4 text-lg font-bold text-yellow-400">
+                    شرح الأساسيات
+                  </h3>
 
-  <p className="mt-2 text-xs leading-5 text-zinc-500">
-    مراجعة وشرح أساسيات الرياضيات المهمة
-  </p>
-</button>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    مراجعة وشرح أساسيات الرياضيات المهمة
+                  </p>
+                </button>
               </div>
 
               {lecturesError && (
@@ -747,9 +773,7 @@ const dailyMessage = getDailyMessage()
                 </div>
               ) : (
                 <div className="mt-6 space-y-6">
-                  {Object.entries(
-                    groupedLectures
-                  ).map(
+                  {Object.entries(groupedLectures).map(
                     ([chapter, topics]) => (
                       <div
                         key={chapter}
@@ -760,13 +784,8 @@ const dailyMessage = getDailyMessage()
                         </h3>
 
                         <div className="mt-5 space-y-5">
-                          {Object.entries(
-                            topics
-                          ).map(
-                            ([
-                              topic,
-                              topicLectures,
-                            ]) => (
+                          {Object.entries(topics).map(
+                            ([topic, topicLectures]) => (
                               <div
                                 key={topic}
                                 className="rounded-xl border border-zinc-800 bg-black p-4"
@@ -779,30 +798,22 @@ const dailyMessage = getDailyMessage()
                                   {topicLectures.map(
                                     (lecture) => (
                                       <div
-                                        key={
-                                          lecture.id
-                                        }
+                                        key={lecture.id}
                                         className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:flex-row sm:items-center sm:justify-between"
                                       >
                                         <div>
                                           <p className="font-bold">
-                                            {
-                                              lecture.title
-                                            }
+                                            {lecture.title}
                                           </p>
 
                                           <p className="mt-1 text-xs text-zinc-500">
                                             الدرس رقم{' '}
-                                            {
-                                              lecture.sort_order
-                                            }
+                                            {lecture.sort_order}
                                           </p>
                                         </div>
 
                                         <a
-                                          href={
-                                            lecture.video_url
-                                          }
+                                          href={lecture.video_url}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className="rounded-xl bg-yellow-400 px-5 py-3 text-center font-bold text-black"
@@ -834,8 +845,7 @@ const dailyMessage = getDailyMessage()
           )}
 
           {/* الاختبارات الأسبوعية */}
-          {activeSection ===
-            'weekly-exams' && (
+          {activeSection === 'weekly-exams' && (
             <section className="mt-6">
               <button
                 type="button"
@@ -849,9 +859,33 @@ const dailyMessage = getDailyMessage()
             </section>
           )}
 
+          {/* شهاداتي */}
+          {activeSection === 'certificates' && (
+            <section className="mt-6">
+              <button
+                type="button"
+                onClick={goHome}
+                className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              >
+                ← رجوع للوحة الطالب
+              </button>
+
+              <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-8 text-center">
+                <div className="text-5xl">🏅</div>
+
+                <h2 className="mt-4 text-2xl font-bold text-yellow-400">
+                  شهاداتي
+                </h2>
+
+                <p className="mt-3 text-zinc-400">
+                  هنا ستظهر شهادات الامتياز والتفوق بعد اعتماد نتائج الاختبارات الأسبوعية.
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* لوحة النخبة */}
-          {activeSection ===
-            'leaderboard' && (
+          {activeSection === 'leaderboard' && (
             <section className="mt-6">
               <button
                 type="button"
@@ -866,8 +900,7 @@ const dailyMessage = getDailyMessage()
           )}
 
           {/* مراجعة الأسئلة الوزارية */}
-          {activeSection ===
-            'ministerial-reviews' && (
+          {activeSection === 'ministerial-reviews' && (
             <section className="mt-6">
               <button
                 type="button"
@@ -880,20 +913,21 @@ const dailyMessage = getDailyMessage()
               <PrivateMinisterialReviews />
             </section>
           )}
-          {/* شرح الأساسيات */}
-{activeSection === 'basic-lessons' && (
-  <section className="mt-6">
-    <button
-      type="button"
-      onClick={goHome}
-      className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
-    >
-      ← رجوع للوحة الطالب
-    </button>
 
-    <PrivateBasicLessons />
-  </section>
-)}
+          {/* شرح الأساسيات */}
+          {activeSection === 'basic-lessons' && (
+            <section className="mt-6">
+              <button
+                type="button"
+                onClick={goHome}
+                className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+              >
+                ← رجوع للوحة الطالب
+              </button>
+
+              <PrivateBasicLessons />
+            </section>
+          )}
         </div>
       </main>
     )

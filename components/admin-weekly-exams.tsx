@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -13,6 +14,8 @@ type WeeklyExam = {
   starts_at: string | null
   deadline_at: string | null
   is_active: boolean
+  results_approved: boolean
+  results_approved_at: string | null
 }
 
 type ExamQuestion = {
@@ -36,6 +39,9 @@ export default function AdminWeeklyExams() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const [approvingExamId, setApprovingExamId] =
+    useState<number | null>(null)
 
   const [questionLoading, setQuestionLoading] =
     useState(false)
@@ -152,9 +158,9 @@ export default function AdminWeeklyExams() {
       setStartsAt('')
       setDeadlineAt('')
 
-      setMessage('تم إنشاء الاختبار الأسبوعي')
-
       await loadExams()
+
+      setMessage('تم إنشاء الاختبار الأسبوعي بنجاح ✅')
     } catch {
       setError('تعذر الاتصال بالخادم')
     } finally {
@@ -211,8 +217,94 @@ export default function AdminWeeklyExams() {
             : null
         )
       }
+
+      setMessage(
+        exam.is_active
+          ? 'تم إخفاء الاختبار ✅'
+          : 'تم تفعيل الاختبار ✅'
+      )
     } catch {
       setError('تعذر الاتصال بالخادم')
+    }
+  }
+
+  const approveResults = async (exam: WeeklyExam) => {
+    if (
+      exam.results_approved ||
+      approvingExamId !== null
+    ) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      `هل تريد اعتماد نتائج "${exam.title}" نهائياً؟\n\nتأكد من انتهاء موعد الاختبار وتصحيح جميع التسليمات قبل المتابعة.`
+    )
+
+    if (!confirmed) return
+
+    setApprovingExamId(exam.id)
+    setError('')
+    setMessage('')
+
+    try {
+      const response = await fetch(
+        '/api/admin-weekly-exams',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            examId: exam.id,
+          }),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(
+          data.error ||
+            'تعذر اعتماد نتائج الاختبار'
+        )
+        return
+      }
+
+      setExams((current) =>
+        current.map((item) =>
+          item.id === exam.id
+            ? {
+                ...item,
+                results_approved: true,
+                results_approved_at:
+                  data.exam?.results_approved_at ??
+                  new Date().toISOString(),
+              }
+            : item
+        )
+      )
+
+      setSelectedExam((current) =>
+        current?.id === exam.id
+          ? {
+              ...current,
+              results_approved: true,
+              results_approved_at:
+                data.exam?.results_approved_at ??
+                new Date().toISOString(),
+            }
+          : current
+      )
+
+      setMessage(
+        `تم اعتماد نتائج "${exam.title}" بنجاح ✅`
+      )
+    } catch {
+      setError(
+        'تعذر الاتصال بالخادم أثناء اعتماد النتائج'
+      )
+    } finally {
+      setApprovingExamId(null)
     }
   }
 
@@ -252,6 +344,10 @@ export default function AdminWeeklyExams() {
       if (selectedExam?.id === exam.id) {
         setSelectedExam(null)
         setQuestions([])
+      }
+
+      if (gradingExamId === exam.id) {
+        setGradingExamId(null)
       }
 
       setMessage('تم حذف الاختبار')
@@ -399,9 +495,9 @@ export default function AdminWeeklyExams() {
         String(Number(current || 0) + 1)
       )
 
-      setMessage('تمت إضافة السؤال ✅')
-
       await openQuestions(selectedExam)
+
+      setMessage('تمت إضافة السؤال بنجاح ✅')
     } catch {
       setError('تعذر الاتصال بالخادم')
     } finally {
@@ -474,7 +570,8 @@ export default function AdminWeeklyExams() {
 
         <p className="mt-2 text-sm leading-6 text-zinc-400">
           أنشئ اختباراً أسبوعياً ثم أضف الأسئلة
-          ودرجاتها.
+          ودرجاتها. بعد انتهاء الاختبار وتصحيح
+          التسليمات يمكنك اعتماد النتائج.
         </p>
       </div>
 
@@ -613,9 +710,20 @@ export default function AdminWeeklyExams() {
       </button>
 
       <div className="mt-8 border-t border-zinc-800 pt-6">
-        <h3 className="text-xl font-bold">
-          الاختبارات المضافة
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-xl font-bold">
+            الاختبارات المضافة
+          </h3>
+
+          <button
+            type="button"
+            onClick={loadExams}
+            disabled={loading}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-bold disabled:opacity-50"
+          >
+            {loading ? 'جاري التحديث...' : 'تحديث'}
+          </button>
+        </div>
 
         {loading ? (
           <p className="mt-4 text-zinc-400">
@@ -654,12 +762,36 @@ export default function AdminWeeklyExams() {
                           ? 'مفعّل'
                           : 'مخفي'}
                       </span>
+
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-bold ${
+                          exam.results_approved
+                            ? 'bg-green-500/10 text-green-400'
+                            : 'bg-yellow-400/10 text-yellow-400'
+                        }`}
+                      >
+                        {exam.results_approved
+                          ? '✅ النتائج معتمدة'
+                          : '⏳ النتائج غير معتمدة'}
+                      </span>
                     </div>
 
                     <p className="mt-2 text-sm text-zinc-400">
                       الدرجة: {exam.total_score} •
                       النقاط: {exam.points_available}
                     </p>
+
+                    {exam.results_approved &&
+                      exam.results_approved_at && (
+                        <p className="mt-2 text-xs text-green-400">
+                          تاريخ الاعتماد:{' '}
+                          {new Date(
+                            exam.results_approved_at
+                          ).toLocaleString('ar-IQ', {
+                            timeZone: 'Asia/Baghdad',
+                          })}
+                        </p>
+                      )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -695,6 +827,27 @@ export default function AdminWeeklyExams() {
                     >
                       تصحيح التسليمات
                     </button>
+
+                    {exam.results_approved ? (
+                      <span className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm font-bold text-green-400">
+                        🏅 تم الاعتماد
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          approveResults(exam)
+                        }
+                        disabled={
+                          approvingExamId !== null
+                        }
+                        className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-bold text-blue-400 disabled:opacity-50"
+                      >
+                        {approvingExamId === exam.id
+                          ? 'جاري اعتماد النتائج...'
+                          : '🏅 اعتماد النتائج'}
+                      </button>
+                    )}
 
                     <button
                       type="button"

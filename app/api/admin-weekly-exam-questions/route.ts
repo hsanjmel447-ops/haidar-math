@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -66,6 +67,53 @@ function isAdmin(request: Request) {
     )
   } catch {
     return false
+  }
+}
+
+// التحقق من اعتماد نتائج الاختبار
+async function checkExamApproval(examId: number) {
+  const { data: exam, error } = await supabaseAdmin
+    .from('weekly_exams')
+    .select('id, total_score, results_approved')
+    .eq('id', examId)
+    .maybeSingle()
+
+  if (error) {
+    return {
+      exam: null,
+      error: NextResponse.json(
+        { error: 'تعذر التحقق من حالة الاختبار' },
+        { status: 500 }
+      ),
+    }
+  }
+
+  if (!exam) {
+    return {
+      exam: null,
+      error: NextResponse.json(
+        { error: 'الاختبار غير موجود' },
+        { status: 404 }
+      ),
+    }
+  }
+
+  if (exam.results_approved) {
+    return {
+      exam: null,
+      error: NextResponse.json(
+        {
+          error:
+            'تم اعتماد نتائج هذا الاختبار، ولا يمكن إضافة أو تعديل أو حذف أسئلته',
+        },
+        { status: 403 }
+      ),
+    }
+  }
+
+  return {
+    exam,
+    error: null,
   }
 }
 
@@ -182,19 +230,14 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: exam, error: examError } =
-      await supabaseAdmin
-        .from('weekly_exams')
-        .select('id, total_score')
-        .eq('id', examId)
-        .maybeSingle()
+    // منع إضافة أسئلة بعد اعتماد النتائج
+    const approval = await checkExamApproval(examId)
 
-    if (examError || !exam) {
-      return NextResponse.json(
-        { error: 'الاختبار غير موجود' },
-        { status: 404 }
-      )
+    if (approval.error) {
+      return approval.error
     }
+
+    const exam = approval.exam!
 
     const { data: currentQuestions, error: sumError } =
       await supabaseAdmin
@@ -294,6 +337,17 @@ export async function PATCH(request: Request) {
       )
     }
 
+    // منع تعديل الأسئلة بعد اعتماد النتائج
+    const approval = await checkExamApproval(
+      currentQuestion.exam_id
+    )
+
+    if (approval.error) {
+      return approval.error
+    }
+
+    const exam = approval.exam!
+
     const updates: Record<string, unknown> = {}
 
     if (body.questionText !== undefined) {
@@ -340,18 +394,22 @@ export async function PATCH(request: Request) {
         )
       }
 
-      const { data: exam } = await supabaseAdmin
-        .from('weekly_exams')
-        .select('total_score')
-        .eq('id', currentQuestion.exam_id)
-        .single()
-
-      const { data: otherQuestions } =
+      const { data: otherQuestions, error: otherError } =
         await supabaseAdmin
           .from('weekly_exam_questions')
           .select('max_score')
           .eq('exam_id', currentQuestion.exam_id)
           .neq('id', questionId)
+
+      if (otherError) {
+        return NextResponse.json(
+          {
+            error:
+              'تعذر التحقق من درجات الأسئلة',
+          },
+          { status: 500 }
+        )
+      }
 
       const otherTotal = (otherQuestions ?? []).reduce(
         (sum, question) =>
@@ -360,9 +418,8 @@ export async function PATCH(request: Request) {
       )
 
       if (
-        exam &&
         otherTotal + maxScore >
-          Number(exam.total_score)
+        Number(exam.total_score)
       ) {
         return NextResponse.json(
           {
@@ -431,6 +488,37 @@ export async function DELETE(request: Request) {
         { error: 'السؤال غير صالح' },
         { status: 400 }
       )
+    }
+
+    // معرفة الاختبار الذي يتبع له السؤال
+    const { data: question, error: questionError } =
+      await supabaseAdmin
+        .from('weekly_exam_questions')
+        .select('id, exam_id')
+        .eq('id', questionId)
+        .maybeSingle()
+
+    if (questionError) {
+      return NextResponse.json(
+        { error: 'تعذر التحقق من السؤال' },
+        { status: 500 }
+      )
+    }
+
+    if (!question) {
+      return NextResponse.json(
+        { error: 'السؤال غير موجود' },
+        { status: 404 }
+      )
+    }
+
+    // منع حذف الأسئلة بعد اعتماد النتائج
+    const approval = await checkExamApproval(
+      question.exam_id
+    )
+
+    if (approval.error) {
+      return approval.error
     }
 
     const { error } = await supabaseAdmin

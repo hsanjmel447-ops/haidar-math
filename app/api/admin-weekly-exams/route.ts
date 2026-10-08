@@ -691,19 +691,28 @@ export async function PUT(request: Request) {
       )
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('weekly_exams')
-      .update({
-        results_approved: true,
-        results_approved_at:
-          now.toISOString(),
-      })
-      .eq('id', examId)
-      .eq('results_approved', false)
-      .select(
-        'id, results_approved, results_approved_at'
+    
+    const { data: approvalResult, error } =
+      await supabaseAdmin.rpc(
+        'approve_and_issue_weekly_exam',
+        {
+          p_exam_id: examId,
+        }
       )
-      .maybeSingle()
+
+    const result = approvalResult?.[0]
+
+    const data = result?.approved
+      ? {
+          id: examId,
+          results_approved: true,
+          results_approved_at: new Date().toISOString(),
+        }
+      : null
+
+    const certificatesIssued =
+      result?.certificates_issued ?? 0
+
 
     if (error) {
       return NextResponse.json(

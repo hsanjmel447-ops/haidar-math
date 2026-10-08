@@ -549,3 +549,123 @@ export async function DELETE(request: Request) {
     )
   }
 }
+
+export async function PUT(request: Request) {
+  if (!isAdmin(request)) {
+    return NextResponse.json(
+      { error: 'غير مصرح بالدخول' },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const body = await request.json()
+    const examId = Number(body.examId)
+
+    if (!Number.isInteger(examId) || examId < 1) {
+      return NextResponse.json(
+        { error: 'رقم الاختبار غير صالح' },
+        { status: 400 }
+      )
+    }
+
+    const { data: exam, error: examError } =
+      await supabaseAdmin
+        .from('weekly_exams')
+        .select('id, deadline_at, results_approved')
+        .eq('id', examId)
+        .maybeSingle()
+
+    if (examError || !exam) {
+      return NextResponse.json(
+        { error: 'الاختبار غير موجود' },
+        { status: 404 }
+      )
+    }
+
+    if (exam.results_approved) {
+      return NextResponse.json(
+        { error: 'تم اعتماد النتائج مسبقاً' },
+        { status: 409 }
+      )
+    }
+
+    const now = new Date()
+
+    const iraqDay = new Intl.DateTimeFormat(
+      'en-US',
+      {
+        timeZone: 'Asia/Baghdad',
+        weekday: 'long',
+      }
+    ).format(now)
+
+    if (iraqDay !== 'Friday') {
+      return NextResponse.json(
+        { error: 'اعتماد النتائج متاح يوم الجمعة فقط' },
+        { status: 403 }
+      )
+    }
+
+    if (
+      !exam.deadline_at ||
+      new Date(exam.deadline_at).getTime() > now.getTime()
+    ) {
+      return NextResponse.json(
+        { error: 'لم ينتهِ موعد الاختبار بعد' },
+        { status: 403 }
+      )
+    }
+
+    const { data: pending, error: pendingError } =
+      await supabaseAdmin
+        .from('weekly_exam_submissions')
+        .select('id')
+        .eq('exam_id', examId)
+        .eq('status', 'submitted')
+        .limit(1)
+
+    if (pendingError) {
+      return NextResponse.json(
+        { error: 'تعذر التحقق من التصحيح' },
+        { status: 500 }
+      )
+    }
+
+    if (pending?.length) {
+      return NextResponse.json(
+        { error: 'يوجد اختبارات لم يتم تصحيحها بعد' },
+        { status: 409 }
+      )
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('weekly_exams')
+      .update({
+        results_approved: true,
+        results_approved_at: now.toISOString(),
+      })
+      .eq('id', examId)
+      .eq('results_approved', false)
+      .select('id, results_approved, results_approved_at')
+      .maybeSingle()
+
+    if (error || !data) {
+      return NextResponse.json(
+        { error: 'تعذر اعتماد النتائج' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'تم اعتماد النتائج بنجاح',
+      exam: data,
+    })
+  } catch {
+    return NextResponse.json(
+      { error: 'حدث خطأ أثناء اعتماد النتائج' },
+      { status: 500 }
+    )
+  }
+}

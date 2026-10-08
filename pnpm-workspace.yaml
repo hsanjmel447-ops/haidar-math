@@ -4,5 +4,5 @@ minimumReleaseAgeExclude:
   - '@next/*'
   - next
 
-onlyBuiltDependencies:
-  - core-js
+allowBuilds:
+  core-js: true

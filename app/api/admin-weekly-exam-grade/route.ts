@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server'
 import {
   createHmac,
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
     } = await supabaseAdmin
       .from('weekly_exams')
       .select(
-        'id, title, total_score, points_available'
+        'id, title, total_score, points_available, results_approved'
       )
       .eq('id', submission.exam_id)
       .maybeSingle()
@@ -172,6 +173,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'الاختبار غير موجود' },
         { status: 404 }
+      )
+    }
+
+    // منع تغيير الدرجات بعد اعتماد النتائج
+    if (exam.results_approved) {
+      return NextResponse.json(
+        {
+          error:
+            'تم اعتماد نتائج هذا الاختبار، ولا يمكن تعديل الدرجات بعد الاعتماد',
+        },
+        { status: 403 }
       )
     }
 

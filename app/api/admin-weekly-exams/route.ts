@@ -584,6 +584,7 @@ export async function DELETE(request: Request) {
   }
 }
 
+
 export async function PUT(request: Request) {
   if (!isAdmin(request)) {
     return NextResponse.json(
@@ -596,10 +597,7 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const examId = Number(body.examId)
 
-    if (
-      !Number.isInteger(examId) ||
-      examId < 1
-    ) {
+    if (!Number.isInteger(examId) || examId <= 0) {
       return NextResponse.json(
         { error: 'رقم الاختبار غير صالح' },
         { status: 400 }
@@ -609,13 +607,19 @@ export async function PUT(request: Request) {
     const { data: exam, error: examError } =
       await supabaseAdmin
         .from('weekly_exams')
-        .select(
-          'id, deadline_at, results_approved'
-        )
+        .select('id, deadline_at, results_approved')
         .eq('id', examId)
         .maybeSingle()
 
-    if (examError || !exam) {
+    if (examError) {
+      console.error('Approval exam lookup:', examError)
+      return NextResponse.json(
+        { error: 'تعذر قراءة بيانات الاختبار' },
+        { status: 500 }
+      )
+    }
+
+    if (!exam) {
       return NextResponse.json(
         { error: 'الاختبار غير موجود' },
         { status: 404 }
@@ -630,35 +634,24 @@ export async function PUT(request: Request) {
     }
 
     const now = new Date()
-
-    const iraqDay = new Intl.DateTimeFormat(
-      'en-US',
-      {
-        timeZone: 'Asia/Baghdad',
-        weekday: 'long',
-      }
-    ).format(now)
+    const iraqDay = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Baghdad',
+      weekday: 'long',
+    }).format(now)
 
     if (iraqDay !== 'Friday') {
       return NextResponse.json(
-        {
-          error:
-            'اعتماد النتائج متاح يوم الجمعة فقط',
-        },
+        { error: 'اعتماد النتائج متاح يوم الجمعة فقط' },
         { status: 403 }
       )
     }
 
     if (
       !exam.deadline_at ||
-      new Date(exam.deadline_at).getTime() >
-        now.getTime()
+      new Date(exam.deadline_at).getTime() > now.getTime()
     ) {
       return NextResponse.json(
-        {
-          error:
-            'لم ينتهِ موعد الاختبار بعد',
-        },
+        { error: 'لم ينتهِ موعد الاختبار بعد' },
         { status: 403 }
       )
     }
@@ -672,63 +665,57 @@ export async function PUT(request: Request) {
         .limit(1)
 
     if (pendingError) {
+      console.error('Approval pending check:', pendingError)
       return NextResponse.json(
-        {
-          error:
-            'تعذر التحقق من التصحيح',
-        },
+        { error: 'تعذر التحقق من تصحيح التسليمات' },
         { status: 500 }
       )
     }
 
     if (pending?.length) {
       return NextResponse.json(
-        {
-          error:
-            'يوجد اختبارات لم يتم تصحيحها بعد',
-        },
+        { error: 'يوجد اختبارات لم يتم تصحيحها بعد' },
         { status: 409 }
       )
     }
 
-    
-    const { data: approvalResult, error } =
+    const { data: approvalResult, error: rpcError } =
       await supabaseAdmin.rpc(
         'approve_and_issue_weekly_exam',
-        {
-          p_exam_id: examId,
-        }
+        { p_exam_id: examId }
       )
 
-    const result = approvalResult?.[0]
+    if (rpcError) {
+      console.error('Certificate approval RPC failed:', {
+        code: rpcError.code,
+        message: rpcError.message,
+        details: rpcError.details,
+        hint: rpcError.hint,
+      })
 
-    const data = result?.approved
-      ? {
-          id: examId,
-          results_approved: true,
-          results_approved_at: new Date().toISOString(),
-        }
-      : null
-
-    const certificatesIssued =
-      result?.certificates_issued ?? 0
-
-
-    if (error) {
       return NextResponse.json(
         {
-          error:
-            'تعذر اعتماد النتائج',
+          error: 'فشل اعتماد النتائج داخل قاعدة البيانات',
+          code: rpcError.code ?? null,
+          details: rpcError.message,
         },
         { status: 500 }
       )
     }
 
-    if (!data) {
+    const result = Array.isArray(approvalResult)
+      ? approvalResult[0]
+      : approvalResult
+
+    if (!result?.approved) {
+      console.error(
+        'Certificate approval returned no approval:',
+        approvalResult
+      )
+
       return NextResponse.json(
         {
-          error:
-            'تم اعتماد النتائج مسبقاً أو تغيرت حالة الاختبار',
+          error: 'لم تؤكد قاعدة البيانات اعتماد النتائج',
         },
         { status: 409 }
       )
@@ -736,15 +723,20 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'تم اعتماد النتائج بنجاح',
-      exam: data,
-    })
-  } catch {
-    return NextResponse.json(
-      {
-        error:
-          'حدث خطأ أثناء اعتماد النتائج',
+      message: 'تم اعتماد النتائج وإصدار الشهادات بنجاح',
+      exam: {
+        id: examId,
+        results_approved: true,
+        results_approved_at: now.toISOString(),
       },
+      certificatesIssued:
+        Number(result.certificates_issued ?? 0),
+    })
+  } catch (error) {
+    console.error('Unexpected weekly approval error:', error)
+
+    return NextResponse.json(
+      { error: 'حدث خطأ غير متوقع أثناء اعتماد النتائج' },
       { status: 500 }
     )
   }

@@ -1,9 +1,12 @@
+
 import { NextResponse } from 'next/server'
 import {
   createHmac,
   timingSafeEqual,
 } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 async function getStudent(request: Request) {
   const cookieHeader =
@@ -20,20 +23,21 @@ async function getStudent(request: Request) {
     }
   }
 
-  const token =
-    decodeURIComponent(match[1])
+  let token: string
 
-  const [
-    studentId,
-    expiresAt,
-    signature,
-  ] = token.split('.')
+  try {
+    token = decodeURIComponent(match[1])
+  } catch {
+    return {
+      error: 'الجلسة غير صالحة',
+      status: 401,
+    }
+  }
 
-  if (
-    !studentId ||
-    !expiresAt ||
-    !signature
-  ) {
+  const [studentId, expiresAt, signature] =
+    token.split('.')
+
+  if (!studentId || !expiresAt || !signature) {
     return {
       error: 'الجلسة غير صالحة',
       status: 401,
@@ -77,10 +81,7 @@ async function getStudent(request: Request) {
       Buffer.from(signature, 'hex')
 
     const expectedBuffer =
-      Buffer.from(
-        expectedSignature,
-        'hex'
-      )
+      Buffer.from(expectedSignature, 'hex')
 
     if (
       signatureBuffer.length !==
@@ -112,16 +113,14 @@ async function getStudent(request: Request) {
     }
   }
 
-  const {
-    data: student,
-    error,
-  } = await supabaseAdmin
-    .from('private_students')
-    .select(
-      'id, name, is_active, expires_at, device_id'
-    )
-    .eq('id', id)
-    .maybeSingle()
+  const { data: student, error } =
+    await supabaseAdmin
+      .from('private_students')
+      .select(
+        'id, name, is_active, expires_at, device_id'
+      )
+      .eq('id', id)
+      .maybeSingle()
 
   if (error || !student) {
     return {
@@ -139,9 +138,8 @@ async function getStudent(request: Request) {
 
   if (
     student.expires_at &&
-    new Date(
-      student.expires_at
-    ).getTime() <= Date.now()
+    new Date(student.expires_at).getTime() <=
+      Date.now()
   ) {
     return {
       error: 'انتهى الاشتراك',
@@ -154,8 +152,7 @@ async function getStudent(request: Request) {
     student.device_id !== deviceId
   ) {
     return {
-      error:
-        'هذا الحساب مرتبط بجهاز آخر',
+      error: 'هذا الحساب مرتبط بجهاز آخر',
       status: 403,
     }
   }
@@ -166,25 +163,52 @@ async function getStudent(request: Request) {
   }
 }
 
-export async function GET(
-  request: Request
-) {
+// بداية الأسبوع: السبت 00:00 بتوقيت بغداد
+// بغداد UTC+3 طوال السنة
+function getBaghdadWeekRange() {
+  const offset = 3 * 60 * 60 * 1000
+  const now = Date.now()
+
+  const baghdadNow = new Date(now + offset)
+
+  const day = baghdadNow.getUTCDay()
+
+  // السبت = 6
+  const daysSinceSaturday = (day + 1) % 7
+
+  const start = Date.UTC(
+    baghdadNow.getUTCFullYear(),
+    baghdadNow.getUTCMonth(),
+    baghdadNow.getUTCDate() -
+      daysSinceSaturday
+  ) - offset
+
+  const end =
+    start + 7 * 24 * 60 * 60 * 1000
+
+  return {
+    start: new Date(start).toISOString(),
+    end: new Date(end).toISOString(),
+  }
+}
+
+export async function GET(request: Request) {
   const auth = await getStudent(request)
 
   if (!auth.student) {
     return NextResponse.json(
       {
         error:
-          auth.error ??
-          'غير مصرح بالدخول',
+          auth.error ?? 'غير مصرح بالدخول',
       },
-      {
-        status: auth.status,
-      }
+      { status: auth.status }
     )
   }
 
   try {
+    const { start, end } =
+      getBaghdadWeekRange()
+
     const {
       data: students,
       error: studentsError,
@@ -196,61 +220,70 @@ export async function GET(
     if (studentsError) {
       return NextResponse.json(
         {
-          error:
-            'تعذر تحميل بيانات الطلاب',
+          error: 'تعذر تحميل بيانات الطلاب',
         },
-        {
-          status: 500,
-        }
+        { status: 500 }
       )
     }
 
+    // جلب امتحانات الأسبوع الحالي فقط
     const {
-      data: points,
-      error: pointsError,
+      data: exams,
+      error: examsError,
     } = await supabaseAdmin
-      .from('private_student_points')
-      .select(
-        'student_id, points, exam_id'
-      )
+      .from('weekly_exams')
+      .select('id')
+      .gte('starts_at', start)
+      .lt('starts_at', end)
 
-    if (pointsError) {
+    if (examsError) {
       return NextResponse.json(
         {
-          error:
-            'تعذر تحميل نقاط النخبة',
+          error: 'تعذر تحميل امتحانات الأسبوع',
         },
-        {
-          status: 500,
-        }
+        { status: 500 }
       )
     }
 
-    const totals = new Map<
-      number,
-      number
-    >()
+    const examIds =
+      (exams ?? []).map((exam) => exam.id)
 
-    for (const point of points ?? []) {
-      const current =
-        totals.get(
-          point.student_id
-        ) ?? 0
+    const totals = new Map<number, number>()
 
-      totals.set(
-        point.student_id,
-        current + Number(point.points)
-      )
+    if (examIds.length > 0) {
+      const {
+        data: points,
+        error: pointsError,
+      } = await supabaseAdmin
+        .from('private_student_points')
+        .select('student_id, points, exam_id')
+        .in('exam_id', examIds)
+
+      if (pointsError) {
+        return NextResponse.json(
+          {
+            error: 'تعذر تحميل نقاط النخبة',
+          },
+          { status: 500 }
+        )
+      }
+
+      for (const point of points ?? []) {
+        const current =
+          totals.get(point.student_id) ?? 0
+
+        totals.set(
+          point.student_id,
+          current + Number(point.points)
+        )
+      }
     }
 
-    const leaderboard = (
-      students ?? []
-    )
+    const leaderboard = (students ?? [])
       .map((student) => ({
         student_id: student.id,
         name: student.name,
-        points:
-          totals.get(student.id) ?? 0,
+        points: totals.get(student.id) ?? 0,
       }))
       .sort((a, b) => {
         if (b.points !== a.points) {
@@ -270,59 +303,50 @@ export async function GET(
     const myEntry =
       leaderboard.find(
         (entry) =>
-          entry.student_id ===
-          auth.student.id
+          entry.student_id === auth.student.id
       ) ?? null
 
     let gapToNext = 0
 
-    if (
-      myEntry &&
-      myEntry.rank > 1
-    ) {
+    if (myEntry && myEntry.rank > 1) {
       const previous =
-        leaderboard[
-          myEntry.rank - 2
-        ]
+        leaderboard[myEntry.rank - 2]
 
       if (previous) {
         gapToNext = Math.max(
           0,
-          previous.points -
-            myEntry.points
+          previous.points - myEntry.points
         )
       }
     }
 
     return NextResponse.json({
       success: true,
-
-      leaderboard:
-        leaderboard.slice(0, 20),
-
+      week_start: start,
+      week_end: end,
+      leaderboard: leaderboard.slice(0, 20),
       me: myEntry
         ? {
-            student_id:
-              myEntry.student_id,
+            student_id: myEntry.student_id,
             name: myEntry.name,
             points: myEntry.points,
             rank: myEntry.rank,
             gap_to_next: gapToNext,
           }
         : null,
-
-      total_students:
-        leaderboard.length,
+      total_students: leaderboard.length,
     })
-  } catch {
+  } catch (error) {
+    console.error(
+      'PRIVATE LEADERBOARD ERROR:',
+      error
+    )
+
     return NextResponse.json(
       {
-        error:
-          'حدث خطأ أثناء تحميل لوحة النخبة',
+        error: 'حدث خطأ أثناء تحميل لوحة النخبة',
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     )
   }
 }

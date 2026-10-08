@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import PrivateQuizzes from '@/components/private-quizzes'
 import PrivateWeeklyExams from '@/components/private-weekly-exams'
+import PrivateWeeklyCertificates from '@/components/private-weekly-certificates'
 import PrivateLeaderboard from '@/components/private-leaderboard'
 import PrivateMinisterialReviews from '@/components/private-ministerial-reviews'
 import PrivateBasicLessons from '@/components/private-basic-lessons'
@@ -870,17 +871,7 @@ export default function PrivateStudentsPage() {
                 ← رجوع للوحة الطالب
               </button>
 
-              <div className="rounded-2xl border border-yellow-400/30 bg-zinc-950 p-8 text-center">
-                <div className="text-5xl">🏅</div>
-
-                <h2 className="mt-4 text-2xl font-bold text-yellow-400">
-                  شهاداتي
-                </h2>
-
-                <p className="mt-3 text-zinc-400">
-                  هنا ستظهر شهادات الامتياز والتفوق بعد اعتماد نتائج الاختبارات الأسبوعية.
-                </p>
-              </div>
+              <PrivateWeeklyCertificates />
             </section>
           )}
 
@@ -905,7 +896,7 @@ export default function PrivateStudentsPage() {
               <button
                 type="button"
                 onClick={goHome}
-                className="mb-4 rounded-xl border border-zinc-700 px-5 py-3 font-bold"
+                className="mb-4 rounded-xl border border border-zinc-700 px-5 py-3 font-bold"
               >
                 ← رجوع للوحة الطالب
               </button>
@@ -941,9 +932,7 @@ export default function PrivateStudentsPage() {
     >
       <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
         <div className="text-center">
-          <div className="text-4xl">
-            🔒
-          </div>
+          <div className="text-4xl">🔒</div>
 
           <h1 className="mt-4 text-3xl font-bold">
             طلاب الخاص

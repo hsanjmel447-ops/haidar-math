@@ -25,9 +25,10 @@ jobs:
         with:
           node-version: 22
 
-      - name: تحديث ملف القفل بدون تشغيل سكربتات البناء
-        run: pnpm install --lockfile-only --no-frozen-lockfile --ignore-scripts
-
+      - name: تثبيت الحزم
+        run: |
+          pnpm config set dangerouslyAllowAllBuilds true
+          pnpm install --no-frozen-lockfile
       - name: حفظ ملف القفل
         run: |
           git config user.name "github-actions[bot]"

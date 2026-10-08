@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -24,10 +25,7 @@ function isAdmin(request: Request) {
 
   const expires = Number(expiresAt)
 
-  if (
-    !Number.isFinite(expires) ||
-    Date.now() > expires
-  ) {
+  if (!Number.isFinite(expires) || Date.now() > expires) {
     return false
   }
 
@@ -71,6 +69,42 @@ function isAdmin(request: Request) {
   }
 }
 
+// فحص حالة اعتماد نتائج الاختبار
+async function getExamApproval(examId: number) {
+  const { data, error } = await supabaseAdmin
+    .from('weekly_exams')
+    .select(
+      'id, results_approved, starts_at, deadline_at'
+    )
+    .eq('id', examId)
+    .maybeSingle()
+
+  if (error) {
+    return {
+      exam: null,
+      response: NextResponse.json(
+        { error: 'تعذر التحقق من حالة الاختبار' },
+        { status: 500 }
+      ),
+    }
+  }
+
+  if (!data) {
+    return {
+      exam: null,
+      response: NextResponse.json(
+        { error: 'الاختبار غير موجود' },
+        { status: 404 }
+      ),
+    }
+  }
+
+  return {
+    exam: data,
+    response: null,
+  }
+}
+
 export async function GET(request: Request) {
   if (!isAdmin(request)) {
     return NextResponse.json(
@@ -89,8 +123,7 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.json(
         {
-          error:
-            'تعذر تحميل الاختبارات الأسبوعية',
+          error: 'تعذر تحميل الاختبارات الأسبوعية',
         },
         { status: 500 }
       )
@@ -103,8 +136,7 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json(
       {
-        error:
-          'حدث خطأ أثناء تحميل الاختبارات',
+        error: 'حدث خطأ أثناء تحميل الاختبارات',
       },
       { status: 500 }
     )
@@ -122,12 +154,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const title = String(
-      body.title ?? ''
-    ).trim()
-
+    const title = String(body.title ?? '').trim()
     const weekNumber = Number(body.weekNumber)
-
     const description = String(
       body.description ?? ''
     ).trim()
@@ -200,10 +228,7 @@ export async function POST(request: Request) {
       Number.isNaN(Date.parse(deadlineAt))
     ) {
       return NextResponse.json(
-        {
-          error:
-            'موعد انتهاء الاختبار غير صالح',
-        },
+        { error: 'موعد انتهاء الاختبار غير صالح' },
         { status: 400 }
       )
     }
@@ -234,6 +259,7 @@ export async function POST(request: Request) {
         starts_at: startsAt,
         deadline_at: deadlineAt,
         is_active: false,
+        results_approved: false,
       })
       .select()
       .single()
@@ -241,8 +267,7 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json(
         {
-          error:
-            'تعذر إنشاء الاختبار الأسبوعي',
+          error: 'تعذر إنشاء الاختبار الأسبوعي',
         },
         { status: 500 }
       )
@@ -255,8 +280,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       {
-        error:
-          'حدث خطأ أثناء إنشاء الاختبار',
+        error: 'حدث خطأ أثناء إنشاء الاختبار',
       },
       { status: 500 }
     )
@@ -285,6 +309,20 @@ export async function PATCH(request: Request) {
       )
     }
 
+    const check = await getExamApproval(examId)
+
+    if (check.response) return check.response
+
+    if (check.exam!.results_approved) {
+      return NextResponse.json(
+        {
+          error:
+            'تم اعتماد نتائج هذا الاختبار، ولا يمكن تعديل بياناته بعد الاعتماد',
+        },
+        { status: 403 }
+      )
+    }
+
     const updates: Record<string, unknown> = {}
 
     if (body.title !== undefined) {
@@ -305,14 +343,11 @@ export async function PATCH(request: Request) {
         body.description
       ).trim()
 
-      updates.description =
-        description || null
+      updates.description = description || null
     }
 
     if (body.weekNumber !== undefined) {
-      const weekNumber = Number(
-        body.weekNumber
-      )
+      const weekNumber = Number(body.weekNumber)
 
       if (
         !Number.isInteger(weekNumber) ||
@@ -328,19 +363,14 @@ export async function PATCH(request: Request) {
     }
 
     if (body.totalScore !== undefined) {
-      const totalScore = Number(
-        body.totalScore
-      )
+      const totalScore = Number(body.totalScore)
 
       if (
         !Number.isInteger(totalScore) ||
         totalScore <= 0
       ) {
         return NextResponse.json(
-          {
-            error:
-              'الدرجة الكلية غير صالحة',
-          },
+          { error: 'الدرجة الكلية غير صالحة' },
           { status: 400 }
         )
       }
@@ -348,9 +378,7 @@ export async function PATCH(request: Request) {
       updates.total_score = totalScore
     }
 
-    if (
-      body.pointsAvailable !== undefined
-    ) {
+    if (body.pointsAvailable !== undefined) {
       const pointsAvailable = Number(
         body.pointsAvailable
       )
@@ -365,13 +393,10 @@ export async function PATCH(request: Request) {
         )
       }
 
-      updates.points_available =
-        pointsAvailable
+      updates.points_available = pointsAvailable
     }
 
-    if (
-      typeof body.isActive === 'boolean'
-    ) {
+    if (typeof body.isActive === 'boolean') {
       updates.is_active = body.isActive
     }
 
@@ -385,10 +410,7 @@ export async function PATCH(request: Request) {
         Number.isNaN(Date.parse(startsAt))
       ) {
         return NextResponse.json(
-          {
-            error:
-              'موعد بدء الاختبار غير صالح',
-          },
+          { error: 'موعد بدء الاختبار غير صالح' },
           { status: 400 }
         )
       }
@@ -406,10 +428,7 @@ export async function PATCH(request: Request) {
         Number.isNaN(Date.parse(deadlineAt))
       ) {
         return NextResponse.json(
-          {
-            error:
-              'موعد انتهاء الاختبار غير صالح',
-          },
+          { error: 'موعد انتهاء الاختبار غير صالح' },
           { status: 400 }
         )
       }
@@ -417,53 +436,32 @@ export async function PATCH(request: Request) {
       updates.deadline_at = deadlineAt
     }
 
-    if (
-      body.startsAt !== undefined ||
+    const finalStartsAt =
+      body.startsAt !== undefined
+        ? updates.starts_at
+        : check.exam!.starts_at
+
+    const finalDeadlineAt =
       body.deadlineAt !== undefined
+        ? updates.deadline_at
+        : check.exam!.deadline_at
+
+    if (
+      typeof finalStartsAt === 'string' &&
+      typeof finalDeadlineAt === 'string' &&
+      new Date(finalDeadlineAt).getTime() <=
+        new Date(finalStartsAt).getTime()
     ) {
-      const { data: currentExam } =
-        await supabaseAdmin
-          .from('weekly_exams')
-          .select('starts_at, deadline_at')
-          .eq('id', examId)
-          .maybeSingle()
-
-      if (!currentExam) {
-        return NextResponse.json(
-          { error: 'الاختبار غير موجود' },
-          { status: 404 }
-        )
-      }
-
-      const finalStartsAt =
-        body.startsAt !== undefined
-          ? updates.starts_at
-          : currentExam.starts_at
-
-      const finalDeadlineAt =
-        body.deadlineAt !== undefined
-          ? updates.deadline_at
-          : currentExam.deadline_at
-
-      if (
-        typeof finalStartsAt === 'string' &&
-        typeof finalDeadlineAt === 'string' &&
-        new Date(finalDeadlineAt).getTime() <=
-          new Date(finalStartsAt).getTime()
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              'موعد انتهاء الاختبار يجب أن يكون بعد موعد البدء',
-          },
-          { status: 400 }
-        )
-      }
+      return NextResponse.json(
+        {
+          error:
+            'موعد انتهاء الاختبار يجب أن يكون بعد موعد البدء',
+        },
+        { status: 400 }
+      )
     }
 
-    if (
-      Object.keys(updates).length === 0
-    ) {
+    if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: 'لا توجد تعديلات' },
         { status: 400 }
@@ -474,13 +472,24 @@ export async function PATCH(request: Request) {
       .from('weekly_exams')
       .update(updates)
       .eq('id', examId)
+      .eq('results_approved', false)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       return NextResponse.json(
         { error: 'تعذر تعديل الاختبار' },
         { status: 500 }
+      )
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        {
+          error:
+            'تعذر تعديل الاختبار؛ ربما تم اعتماد نتائجه',
+        },
+        { status: 409 }
       )
     }
 
@@ -491,8 +500,7 @@ export async function PATCH(request: Request) {
   } catch {
     return NextResponse.json(
       {
-        error:
-          'حدث خطأ أثناء تعديل الاختبار',
+        error: 'حدث خطأ أثناء تعديل الاختبار',
       },
       { status: 500 }
     )
@@ -524,15 +532,42 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const { error } = await supabaseAdmin
+    const check = await getExamApproval(examId)
+
+    if (check.response) return check.response
+
+    if (check.exam!.results_approved) {
+      return NextResponse.json(
+        {
+          error:
+            'لا يمكن حذف اختبار تم اعتماد نتائجه',
+        },
+        { status: 403 }
+      )
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('weekly_exams')
       .delete()
       .eq('id', examId)
+      .eq('results_approved', false)
+      .select('id')
+      .maybeSingle()
 
     if (error) {
       return NextResponse.json(
         { error: 'تعذر حذف الاختبار' },
         { status: 500 }
+      )
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        {
+          error:
+            'تعذر حذف الاختبار؛ ربما تم اعتماد نتائجه',
+        },
+        { status: 409 }
       )
     }
 
@@ -542,8 +577,7 @@ export async function DELETE(request: Request) {
   } catch {
     return NextResponse.json(
       {
-        error:
-          'حدث خطأ أثناء حذف الاختبار',
+        error: 'حدث خطأ أثناء حذف الاختبار',
       },
       { status: 500 }
     )
@@ -562,7 +596,10 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const examId = Number(body.examId)
 
-    if (!Number.isInteger(examId) || examId < 1) {
+    if (
+      !Number.isInteger(examId) ||
+      examId < 1
+    ) {
       return NextResponse.json(
         { error: 'رقم الاختبار غير صالح' },
         { status: 400 }
@@ -572,7 +609,9 @@ export async function PUT(request: Request) {
     const { data: exam, error: examError } =
       await supabaseAdmin
         .from('weekly_exams')
-        .select('id, deadline_at, results_approved')
+        .select(
+          'id, deadline_at, results_approved'
+        )
         .eq('id', examId)
         .maybeSingle()
 
@@ -602,17 +641,24 @@ export async function PUT(request: Request) {
 
     if (iraqDay !== 'Friday') {
       return NextResponse.json(
-        { error: 'اعتماد النتائج متاح يوم الجمعة فقط' },
+        {
+          error:
+            'اعتماد النتائج متاح يوم الجمعة فقط',
+        },
         { status: 403 }
       )
     }
 
     if (
       !exam.deadline_at ||
-      new Date(exam.deadline_at).getTime() > now.getTime()
+      new Date(exam.deadline_at).getTime() >
+        now.getTime()
     ) {
       return NextResponse.json(
-        { error: 'لم ينتهِ موعد الاختبار بعد' },
+        {
+          error:
+            'لم ينتهِ موعد الاختبار بعد',
+        },
         { status: 403 }
       )
     }
@@ -627,14 +673,20 @@ export async function PUT(request: Request) {
 
     if (pendingError) {
       return NextResponse.json(
-        { error: 'تعذر التحقق من التصحيح' },
+        {
+          error:
+            'تعذر التحقق من التصحيح',
+        },
         { status: 500 }
       )
     }
 
     if (pending?.length) {
       return NextResponse.json(
-        { error: 'يوجد اختبارات لم يتم تصحيحها بعد' },
+        {
+          error:
+            'يوجد اختبارات لم يتم تصحيحها بعد',
+        },
         { status: 409 }
       )
     }
@@ -643,17 +695,33 @@ export async function PUT(request: Request) {
       .from('weekly_exams')
       .update({
         results_approved: true,
-        results_approved_at: now.toISOString(),
+        results_approved_at:
+          now.toISOString(),
       })
       .eq('id', examId)
       .eq('results_approved', false)
-      .select('id, results_approved, results_approved_at')
+      .select(
+        'id, results_approved, results_approved_at'
+      )
       .maybeSingle()
 
-    if (error || !data) {
+    if (error) {
       return NextResponse.json(
-        { error: 'تعذر اعتماد النتائج' },
+        {
+          error:
+            'تعذر اعتماد النتائج',
+        },
         { status: 500 }
+      )
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        {
+          error:
+            'تم اعتماد النتائج مسبقاً أو تغيرت حالة الاختبار',
+        },
+        { status: 409 }
       )
     }
 
@@ -664,7 +732,10 @@ export async function PUT(request: Request) {
     })
   } catch {
     return NextResponse.json(
-      { error: 'حدث خطأ أثناء اعتماد النتائج' },
+      {
+        error:
+          'حدث خطأ أثناء اعتماد النتائج',
+      },
       { status: 500 }
     )
   }
